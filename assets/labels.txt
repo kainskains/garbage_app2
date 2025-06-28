@@ -1,1 +1,6 @@
-["cardboard", "glass", "metal", "paper", "plastic", "trash"]
+段ボール
+ガラス
+金属
+紙
+プラスチック
+その他
