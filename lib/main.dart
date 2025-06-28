@@ -172,30 +172,45 @@ class _HomePageState extends State<HomePage> {
       final Uint8List inputImageBytes = _preProcessImage(imageFile);
 
       // モデルの入力テンソルに渡すためのデータ形式を準備
-      // ここでTypedDataのインスタンスを直接準備し、List<Object>にラップします。
-      // tflite_flutterは、このTypedDataとモデルの入力テンソルのShapeを使って、
-      // 内部で正しくテンソルを構築します。
-      TypedData processedInputData; // Float32List または Uint8List
+      // モデルが期待する [1, 128, 128, 3] の形状のリストを作成します。
+      List<List<List<List<double>>>> inputListFloat = []; // float32 用
+      List<List<List<List<int>>>> inputListUint8 = [];     // uint8 用
 
       if (_expectedInputType == TensorType.float32) {
-        // Uint8ListをFloat32Listに変換し、0-1に正規化
-        final float32List = Float32List(inputImageBytes.length);
-        for (int i = 0; i < inputImageBytes.length; i++) {
-          float32List[i] = inputImageBytes[i] / 255.0;
+        // Uint8Listを4次元リストに変換し、0-1に正規化
+        List<List<List<double>>> imagePixels = [];
+        int byteIndex = 0;
+        for (int y = 0; y < _inputSize; y++) {
+          List<List<double>> rowPixels = [];
+          for (int x = 0; x < _inputSize; x++) {
+            rowPixels.add([
+              inputImageBytes[byteIndex++] / 255.0, // R
+              inputImageBytes[byteIndex++] / 255.0, // G
+              inputImageBytes[byteIndex++] / 255.0, // B
+            ]);
+          }
+          imagePixels.add(rowPixels);
         }
-        processedInputData = float32List;
+        inputListFloat.add(imagePixels); // バッチサイズ1
       } else if (_expectedInputType == TensorType.uint8) {
-        // Uint8Listをそのまま使用
-        processedInputData = inputImageBytes;
+        // Uint8Listを4次元リストに変換 (0-255のまま)
+        List<List<List<int>>> imagePixels = [];
+        int byteIndex = 0;
+        for (int y = 0; y < _inputSize; y++) {
+          List<List<int>> rowPixels = [];
+          for (int x = 0; x < _inputSize; x++) {
+            rowPixels.add([
+              inputImageBytes[byteIndex++], // R
+              inputImageBytes[byteIndex++], // G
+              inputImageBytes[byteIndex++], // B
+            ]);
+          }
+          imagePixels.add(rowPixels);
+        }
+        inputListUint8.add(imagePixels); // バッチサイズ1
       } else {
         throw Exception('Unsupported input type for inference: $_expectedInputType');
       }
-
-      // `_interpreter.run` には、`List<Object>` を渡します。
-      // ここで渡すObjectは、Float32List または Uint8List の一次元配列です。
-      // tflite_flutter がこの一次元配列をモデルの期待する [1, 128, 128, 3] に自動的にマッピングします。
-      final List<Object> inputTensor = [processedInputData];
-
 
       // 2. 出力バッファの準備
       final outputTensorShape = _interpreter!.getOutputTensors().first.shape;
@@ -204,7 +219,12 @@ class _HomePageState extends State<HomePage> {
           outputTensorShape[0], List<double>.filled(outputTensorShape[1], 0.0));
 
       // 3. 推論の実行
-      _interpreter!.run(inputTensor, output); // ここで `inputTensor` を渡す
+      if (_expectedInputType == TensorType.float32) {
+        _interpreter!.run(inputListFloat, output);
+      } else if (_expectedInputType == TensorType.uint8) {
+        _interpreter!.run(inputListUint8, output);
+      }
+
 
       // 4. 結果の解析
       final List<double> rawOutput = List<double>.from(output[0]);
@@ -284,7 +304,7 @@ class _HomePageState extends State<HomePage> {
       if (pickedFile != null) {
         setState(() {
           _imageFile = File(pickedFile.path);
-          _predictionResult = '分類中...';
+          _predictionResult = '分類中...'; // 画像選択後、すぐに分類中のメッセージを表示
         });
         await _runInference(_imageFile!);
       }
