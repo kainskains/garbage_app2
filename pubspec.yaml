@@ -13,7 +13,7 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   image_picker: ^1.1.2
-  tflite_flutter: ^0.10.1 # または pub.dev で最新の安定版を確認し、それに合わせる
+  tflite_flutter: ^0.11.0 # または pub.dev で最新の安定版を確認し、それに合わせる
   image: ^4.0.17 # <-- これを追加
   path_provider: ^2.0.15 # <-- これも追加推奨 (オプション)
 
