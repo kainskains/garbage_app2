@@ -1,0 +1,37 @@
+name: garbage_app
+description: "A new Flutter project."
+publish_to: 'none' # Remove this line if you want to publish to pub.dev
+
+version: 1.0.0+1
+
+environment:
+  # 現在のFlutter SDKの安定版に合わせることを推奨します。
+  # 例えば、もし `flutter --version` で3.22.xが表示されるなら、^3.22.0 のようにします。
+  # ここでは一般的な ^3.0.0 としますが、ご自身の環境に合わせてください。
+  sdk: '>=3.0.0 <4.0.0' # Flutter 3.x.x 系をカバーする一般的な指定
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  image_picker: ^1.1.2
+
+  # 非推奨の 'tflite' パッケージの代わりに 'tflite_flutter' を使用
+  # TensorFlow Liteモデルの推論に利用します
+  tflite_flutter: ^0.10.1 # 最新の安定版バージョンを確認してください (執筆時点)
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+
+  # Flutterのリンティングルールを更新
+  flutter_lints: ^3.0.0 # 最新の安定版バージョンを確認してください (執筆時点)
+
+flutter:
+  uses-material-design: true
+
+  # AIモデルとラベルファイルをassetsフォルダに含める
+  assets:
+    - assets/garbage_model.tflite
+    - assets/labels.txt
