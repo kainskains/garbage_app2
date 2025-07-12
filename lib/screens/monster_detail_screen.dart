@@ -11,7 +11,6 @@ class MonsterDetailScreen extends StatelessWidget {
   });
 
   // 属性を日本語に変換するヘルパーメソッド (MonsterAttributeExtensionを使っても良い)
-  // 現状のコードに合わせ、ローカルメソッドとして残します。
   String _getAttributeJapaneseName(MonsterAttribute attribute) {
     switch (attribute) {
       case MonsterAttribute.fire:
@@ -32,7 +31,7 @@ class MonsterDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // ★ここを修正★: 受け取った monster オブジェクトを ChangeNotifierProvider で提供する
+    // 受け取った monster オブジェクトを ChangeNotifierProvider で提供する
     return ChangeNotifierProvider<Monster>.value( // .value コンストラクタを使う
       value: monster, // この monster オブジェクトをProviderとして提供
       child: Scaffold(
@@ -54,16 +53,17 @@ class MonsterDetailScreen extends StatelessWidget {
                   child: monster.imageUrl.isNotEmpty
                       ? Image.asset(
                     monster.imageUrl,
-                    width: 200, // 大きめの画像サイズ
-                    height: 200,
-                    fit: BoxFit.contain, // 画像全体を表示
+                    // ★ここを修正★: 画像のサイズを大きく、画面幅に応じたサイズにする
+                    width: MediaQuery.of(context).size.width * 0.7, // 画面幅の70%にする
+                    height: MediaQuery.of(context).size.width * 0.7, // 画面幅の70%にする (正方形に保つ)
+                    fit: BoxFit.contain, // 画像全体が表示されるように
                     errorBuilder: (context, error, stackTrace) {
-                      return const Icon(Icons.broken_image,
-                          size: 200, color: Colors.grey);
+                      return Icon(Icons.broken_image,
+                          size: MediaQuery.of(context).size.width * 0.5, color: Colors.grey); // エラーアイコンサイズも調整
                     },
                   )
-                      : const Icon(Icons.help_outline,
-                      size: 200, color: Colors.grey),
+                      : Icon(Icons.help_outline,
+                      size: MediaQuery.of(context).size.width * 0.5, color: Colors.grey), // デフォルトアイコンサイズも調整
                 ),
                 const SizedBox(height: 20),
 
@@ -139,11 +139,9 @@ class MonsterDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // デバッグ用: 経験値獲得ボタン (Consumer の外に出し、Provider.of を使う)
+                // デバッグ用: 経験値獲得ボタン
                 ElevatedButton(
                   onPressed: () {
-                    // Consumer の外から Monster インスタンスにアクセスする場合
-                    // listen: false を指定することで、このボタンがMonsterの変更をリッスンして再ビルドされるのを防ぐ
                     Provider.of<Monster>(context, listen: false).gainExp(50);
                   },
                   style: ElevatedButton.styleFrom(

@@ -1,7 +1,5 @@
 import 'package:flutter/foundation.dart'; // ChangeNotifierのために必要
 
-// MonsterAttribute の定義は、このファイルの外部にある場合はそのままにしておいてください。
-// もし、このファイル内で定義する場合は、以下のようなenumが必要です。
 enum MonsterAttribute {
   fire,
   water,
@@ -11,7 +9,7 @@ enum MonsterAttribute {
   none, // 属性なしの場合
 }
 
-// MonsterAttribute の拡張 (displayName ゲッター)
+// MonsterAttribute の拡張 (displayName ゲッターと属性相性判定メソッド)
 extension MonsterAttributeExtension on MonsterAttribute {
   String get displayName {
     switch (this) {
@@ -29,7 +27,46 @@ extension MonsterAttributeExtension on MonsterAttribute {
         return 'なし';
     }
   }
+
+  // ★ここから属性相性ロジックの追加★
+  // 攻撃側 (attackerAttribute) が防御側 (defenderAttribute) に対して
+  // どのような相性を持つか判定するメソッド
+  // 戻り値:
+  //   - 1.5: 効果ばつぐん！ (ダメージ1.5倍)
+  //   - 0.5: いまひとつ... (ダメージ0.5倍)
+  //   - 1.0: ふつう (ダメージ1.0倍)
+  double getAttackMultiplier(MonsterAttribute defenderAttribute) {
+    // 三すくみ (火 > 木 > 水 > 火)
+    if (this == MonsterAttribute.fire && defenderAttribute == MonsterAttribute.wood) {
+      return 1.5; // 炎は木に強い
+    } else if (this == MonsterAttribute.wood && defenderAttribute == MonsterAttribute.water) {
+      return 1.5; // 木は水に強い
+    } else if (this == MonsterAttribute.water && defenderAttribute == MonsterAttribute.fire) {
+      return 1.5; // 水は炎に強い
+    }
+    // 三すくみ (逆相性)
+    else if (this == MonsterAttribute.fire && defenderAttribute == MonsterAttribute.water) {
+      return 0.5; // 炎は水に弱い
+    } else if (this == MonsterAttribute.wood && defenderAttribute == MonsterAttribute.fire) {
+      return 0.5; // 木は炎に弱い
+    } else if (this == MonsterAttribute.water && defenderAttribute == MonsterAttribute.wood) {
+      return 0.5; // 水は木に弱い
+    }
+    // 光・闇 (互いに弱点、それ以外には等倍)
+    else if (this == MonsterAttribute.light && defenderAttribute == MonsterAttribute.dark) {
+      return 1.5; // 光は闇に強い
+    } else if (this == MonsterAttribute.dark && defenderAttribute == MonsterAttribute.light) {
+      return 1.5; // 闇は光に強い
+    }
+    // ノーマル (他の属性に対して等倍)
+    // 例えば、ノーマルは全ての属性に対して等倍とする
+    // 特定の相性を追加することも可能ですが、ここではシンプルに等倍。
+
+    // それ以外の組み合わせ (同じ属性同士、ノーマル対その他など) は等倍
+    return 1.0;
+  }
 }
+// ★ここまで追加★
 
 class Monster extends ChangeNotifier {
   final String id;
@@ -38,7 +75,6 @@ class Monster extends ChangeNotifier {
   final String imageUrl;
   final String description;
 
-  // ★変更点1: ステータスプロパティを final からプライベート変数に変更★
   int _maxHp;
   int _attack;
   int _defense;
@@ -48,18 +84,15 @@ class Monster extends ChangeNotifier {
   int _level;
   int _currentHp;
 
-  // ゲッター (プライベート変数へのアクセス用)
   int get currentExp => _currentExp;
   int get level => _level;
   int get currentHp => _currentHp;
 
-  // ★変更点2: 各ステータスへのゲッターを追加 (プライベート変数 _maxHp などへのアクセス用)★
   int get maxHp => _maxHp;
   int get attack => _attack;
   int get defense => _defense;
   int get speed => _speed;
 
-  // currentHp のセッター (既存のまま)
   set currentHp(int value) {
     if (_currentHp != value) {
       _currentHp = value;
@@ -67,14 +100,12 @@ class Monster extends ChangeNotifier {
     }
   }
 
-  // コンストラクタ
   Monster({
     required this.id,
     required this.name,
     required this.attribute,
     required this.imageUrl,
     this.description = '',
-    // ★変更点3: コンストラクタ引数を int 型として受け取る★
     required int maxHp,
     required int attack,
     required int defense,
@@ -85,12 +116,11 @@ class Monster extends ChangeNotifier {
   }) : _currentExp = currentExp,
         _level = level,
         _currentHp = currentHp,
-        _maxHp = maxHp,    // ★変更点4: プライベート変数に割り当てる★
+        _maxHp = maxHp,
         _attack = attack,
         _defense = defense,
         _speed = speed;
 
-  // JSONからのファクトリーコンストラクタ
   factory Monster.fromJson(Map<String, dynamic> json) {
     return Monster(
       id: json['id'] as String,
@@ -101,7 +131,6 @@ class Monster extends ChangeNotifier {
       ),
       imageUrl: json['imageUrl'] as String,
       description: json['description'] as String? ?? '',
-      // ★変更点5: fromJson でも int 型として受け取る★
       maxHp: json['maxHp'] as int,
       attack: json['attack'] as int,
       defense: json['defense'] as int,
@@ -112,36 +141,31 @@ class Monster extends ChangeNotifier {
     );
   }
 
-  // 次のレベルまでの経験値
   int get expToNextLevel {
     return 100 + (_level - 1) * 50; // 例: Lv1→Lv2は100、Lv2→Lv3は150
   }
 
-  // 経験値獲得メソッド
   void gainExp(int amount) {
     _currentExp += amount;
-    debugPrint('${name} が $amount の経験値を獲得しました。現在の経験値: $_currentExp'); // printをdebugPrintに変更
+    debugPrint('${name} が $amount の経験値を獲得しました。現在の経験値: $_currentExp');
 
     while (_currentExp >= expToNextLevel) {
       _currentExp -= expToNextLevel;
       _level++; // レベルアップ
 
-      // ★変更点6: レベルアップ時のステータス上昇ロジック★
-      // ここで各ステータスを増やす
-      _maxHp += 10;   // HPを10増やす
-      _attack += 2;   // 攻撃力を2増やす
-      _defense += 1;  // 防御力を1増やす
-      _speed += 1;    // スピードを1増やす (必要であれば)
+      _maxHp += 10;
+      _attack += 2;
+      _defense += 1;
+      _speed += 1;
 
       _currentHp = _maxHp; // レベルアップでHP全回復
 
-      debugPrint('${name} がレベルアップ！ 新しいレベル: $_level'); // printをdebugPrintに変更
-      debugPrint('新しいステータス: HP:${_maxHp}, 攻撃力:${_attack}, 防御力:${_defense}, スピード:${_speed}'); // printをdebugPrintに変更
+      debugPrint('${name} がレベルアップ！ 新しいレベル: $_level');
+      debugPrint('新しいステータス: HP:${_maxHp}, 攻撃力:${_attack}, 防御力:${_defense}, スピード:${_speed}');
     }
     notifyListeners(); // 変更をUIに通知
   }
 
-  // ダメージを受けるメソッド
   void takeDamage(int damage) {
     _currentHp -= damage;
     if (_currentHp < 0) {
@@ -150,16 +174,14 @@ class Monster extends ChangeNotifier {
     notifyListeners();
   }
 
-  // HPを回復するメソッド
   void heal(int amount) {
     _currentHp += amount;
-    if (_currentHp > _maxHp) { // 最大HPを超えないように修正
+    if (_currentHp > _maxHp) {
       _currentHp = _maxHp;
     }
     notifyListeners();
   }
 
-  // Monster オブジェクトをJSON（Map）に変換するメソッド
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -167,7 +189,6 @@ class Monster extends ChangeNotifier {
       'attribute': attribute.toString().split('.').last,
       'imageUrl': imageUrl,
       'description': description,
-      // ★変更点7: プライベート変数を参照してJSONに変換★
       'maxHp': _maxHp,
       'attack': _attack,
       'defense': _defense,
