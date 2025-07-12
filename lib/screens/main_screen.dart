@@ -2,10 +2,10 @@
 
 import 'package:flutter/material.dart';
 import 'package:garbage_app/screens/gacha_screen.dart';
-import 'package:garbage_app/screens/stage_selection_screen.dart'; // ステージ選択画面をインポート (もし別途存在すれば)
-import 'package:garbage_app/screens/trash_recognition_screen.dart'; // ★追加: メインの分別機能画面 ★
-import 'package:garbage_app/screens/monster_list_screen.dart'; // ★追加: モンスター一覧画面 ★
-import 'package:garbage_app/screens/battle_screen.dart'; // ★追加: バトル画面 (直接表示するなら) ★
+import 'package:garbage_app/screens/stage_selection_screen.dart';
+import 'package:garbage_app/screens/trash_recognition_screen.dart';
+import 'package:garbage_app/screens/monster_list_screen.dart';
+import 'package:garbage_app/screens/inventory_screen.dart'; // ★追加: インベントリ画面をインポート★
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -17,23 +17,19 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0; // 現在選択されているタブのインデックス
 
-  // ★修正: 実際の画面ウィジェットをリストに設定 ★
   late final List<Widget> _widgetOptions; // initStateで初期化するためlate finalにする
 
   @override
   void initState() {
     super.initState();
     _widgetOptions = <Widget>[
-      // アプリのメイン機能として「ごみ分別」画面を最初のタブにするのが自然でしょう
       const TrashRecognitionScreen(), // インデックス0: メインの分別機能
       const MonsterListScreen(),      // インデックス1: モンスター一覧
       const StageSelectionScreen(),   // インデックス2: ステージ選択
       const GachaScreen(),            // インデックス3: ガチャ
-      // 必要であれば、バトル画面はステージ選択から遷移するので直接ここに含めないことが多い
-      // const BattleScreen(stageId: 'default_stage_id'), // もし直接表示するなら
+      const InventoryScreen(),        // ★追加: インデックス4: インベントリ★
     ];
   }
-
 
   void _onItemTapped(int index) {
     setState(() {
@@ -47,6 +43,7 @@ class _MainScreenState extends State<MainScreen> {
       appBar: AppBar(
         title: const Text('ごみ分別モンスターズ'),
         backgroundColor: Colors.green,
+        // AppBarにアクションボタンは不要になる (BottomNavigationBarで対応するため)
       ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex), // 選択された画面を表示
@@ -69,12 +66,16 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.casino), // ガチャっぽいアイコン
             label: 'ガチャ',
           ),
+          BottomNavigationBarItem( // ★追加: インベントリタブ★
+            icon: Icon(Icons.inventory), // インベントリっぽいアイコン
+            label: 'インベントリ',
+          ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.amber[800],
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
+        type: BottomNavigationBarType.fixed, // アイテム数が多い場合はfixedが推奨
       ),
     );
   }

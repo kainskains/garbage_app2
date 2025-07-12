@@ -1,79 +1,111 @@
-// lib/state/game_state.dart
-
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart'; // ChangeNotifierを使うため
 import 'package:garbage_app/models/monster.dart';
+import 'package:garbage_app/models/gacha_item.dart'; // ★GachaItem をインポート★
 
 class GameState extends ChangeNotifier {
   List<Monster> _monsters = [];
+  List<GachaItem> _inventory = []; // ★インベントリを追加★
+  int _gold = 0; // ★ゴールドを追加★
+  int _gachaTickets = 0; // ★ガチャチケットを追加★
+
   List<Monster> get monsters => _monsters;
+  List<GachaItem> get inventory => _inventory; // ★インベントリのゲッター★
+  int get gold => _gold; // ★ゴールドのゲッター★
+  int get gachaTickets => _gachaTickets; // ★ガチャチケットのゲッター★
 
-  int _gachaTickets = 0;
-  int get gachaTickets => _gachaTickets;
-
+  // 初期化（ダミーデータなど）
   GameState() {
-    _loadMonsters();
+    // 例: 初期モンスター
+    _monsters.add(
+      Monster(
+        id: 'player_monster_1',
+        name: '初期モンスター',
+        attribute: MonsterAttribute.none,
+        imageUrl: 'assets/images/monsters/monster_rare_a.png',
+        maxHp: 100,
+        attack: 10,
+        defense: 5,
+        speed: 7,
+        level: 1,
+        currentExp: 0,
+        currentHp: 100,
+        description: 'あなたの最初の相棒。',
+      ),
+    );
+    // 例: 初期インベントリ（経験値玉を試すために）
+    // ★ダミーアイテムの追加★
+    _inventory.add(GachaItem(id: 'exp_orb_small_001', name: '経験値玉（小）', type: GachaItemType.expOrb, weight: 0, expValue: 100, imageUrl: 'assets/images/items/exp_orb_small.png'));
+    _inventory.add(GachaItem(id: 'exp_orb_medium_001', name: '経験値玉（中）', type: GachaItemType.expOrb, weight: 0, expValue: 500, imageUrl: 'assets/images/items/exp_orb_medium.png'));
+    _inventory.add(GachaItem(id: 'gold_bag_001', name: 'ゴールド袋', type: GachaItemType.gold, weight: 0, goldValue: 1000, imageUrl: 'assets/images/items/gold_bag.png'));
+
+    // 初期ガチャチケット
+    _gachaTickets = 5; // 例: 5枚からスタート
   }
 
-  void addGachaTickets(int amount) {
-    _gachaTickets += amount;
-    print('ガチャチケットを $amount 枚獲得しました。現在のチケット数: $_gachaTickets');
+  void addMonster(Monster monster) {
+    _monsters.add(monster);
     notifyListeners();
   }
 
-  void addMonster(Monster newMonster) {
-    _monsters.add(newMonster);
+  // ★新しいメソッド: アイテムをインベントリに追加★
+  void addInventoryItem(GachaItem item) {
+    _inventory.add(item);
     notifyListeners();
   }
 
-  void removeMonster(String monsterId) {
-    _monsters.removeWhere((m) => m.id == monsterId);
-    notifyListeners();
+  // ★新しいメソッド: 経験値玉を使ってモンスターに経験値を与える★
+  void useExperienceOrb(String monsterId, String orbId) {
+    final monsterIndex = _monsters.indexWhere((m) => m.id == monsterId);
+    final orbIndex = _inventory.indexWhere((item) => item.id == orbId && item.type == GachaItemType.expOrb);
+
+    if (monsterIndex != -1 && orbIndex != -1) {
+      final monster = _monsters[monsterIndex];
+      final orb = _inventory[orbIndex];
+
+      if (orb.expValue != null) {
+        monster.gainExp(orb.expValue!); // MonsterクラスのgainExpメソッドを呼び出す
+        _inventory.removeAt(orbIndex); // インベントリから経験値玉を削除
+        notifyListeners();
+        print('${monster.name} は ${orb.name} を使って ${orb.expValue} 経験値を獲得しました！');
+      } else {
+        print('エラー: 経験値玉にexpValueが設定されていません。');
+      }
+    } else {
+      print('エラー: モンスターまたは経験値玉が見つかりません。');
+    }
   }
 
-  // ★追加: 特定のモンスターに経験値を付与するメソッド★
-  void gainExpToMonster(String monsterId, int expAmount) {
+  // バトル勝利時などに経験値を獲得する既存のメソッド
+  void gainExpToMonster(String monsterId, int exp) {
     final monsterIndex = _monsters.indexWhere((m) => m.id == monsterId);
     if (monsterIndex != -1) {
-      _monsters[monsterIndex].gainExp(expAmount); // MonsterクラスのgainExpを呼び出す
-      // MonsterクラスのgainExp内でnotifyListeners()が呼ばれるため、ここでは通常不要。
-      // ただし、リストの変更（例：モンスターの追加・削除）を伴う場合は、ここでもnotifyListeners()が必要。
-      // 今回は既存モンスターのプロパティ変更なので、Monster自身が通知すれば良い。
-    } else {
-      print('Warning: Monster with ID $monsterId not found to gain exp.');
+      _monsters[monsterIndex].gainExp(exp);
+      notifyListeners();
     }
   }
 
-  Future<void> _loadMonsters() async {
-    if (_monsters.isEmpty) {
-      // ダミーモンスターの初期化時に currentHp も設定するように修正
-      _monsters.add(Monster(
-        id: 'monster_001',
-        name: 'ダミーモンスター1',
-        attribute: MonsterAttribute.fire,
-        imageUrl: 'assets/images/monsters/monster_rare_a.png',
-        maxHp: 10000,
-        attack: 2000,
-        defense: 10,
-        speed: 15,
-        level: 1,
-        currentExp: 0,
-        currentHp: 100, // ★追加: currentHpも初期化★
-      ));
-      _monsters.add(Monster(
-        id: 'monster_002',
-        name: 'ダミーモンスター2',
-        attribute: MonsterAttribute.water,
-        imageUrl: 'assets/images/monsters/monster_rare_a.png',
-        maxHp: 120,
-        attack: 10,
-        defense: 12,
-        speed: 13,
-        level: 1,
-        currentExp: 0,
-        currentHp: 120, // ★追加: currentHpも初期化★
-      ));
+  // ★新しいメソッド: ゴールドの増減★
+  void addGold(int amount) {
+    _gold += amount;
+    notifyListeners();
+  }
+
+  bool spendGold(int amount) {
+    if (_gold >= amount) {
+      _gold -= amount;
       notifyListeners();
+      return true;
     }
+    return false;
+  }
+
+  // ★新しいメソッド: ガチャチケットの増減★
+  void addGachaTickets(int amount) {
+    _gachaTickets += amount;
+    if (_gachaTickets < 0) {
+      _gachaTickets = 0; // Ensure tickets don't go below zero
+    }
+    notifyListeners();
   }
 
   Monster? _selectedPlayerMonster;
