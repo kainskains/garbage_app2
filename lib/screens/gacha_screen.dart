@@ -1,256 +1,226 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:garbage_app/state/game_state.dart';
-import 'package:garbage_app/services/gacha_service.dart';
 import 'package:garbage_app/models/gacha_item.dart';
-import 'package:garbage_app/models/monster.dart';
-import 'package:garbage_app/utils/app_utils.dart'; // AppUtils が必要に応じて含まれているか確認
-import 'package:collection/collection.dart'; // firstWhereOrNull のために必要
-import 'package:garbage_app/widgets/gacha_result_dialog.dart'; // ガチャ結果ダイアログをインポート
+import 'package:garbage_app/models/monster.dart'; // Monsterはガチャからは出さないが、他の場所で使う可能性があるのでインポートは残す
+import 'dart:math' as math; // For random number generation
 
 class GachaScreen extends StatefulWidget {
-  const GachaScreen({Key? key}) : super(key: key);
+  const GachaScreen({super.key});
 
   @override
   State<GachaScreen> createState() => _GachaScreenState();
 }
 
 class _GachaScreenState extends State<GachaScreen> {
-  // GachaServiceのシングルトンインスタンスを取得
-  final GachaService _gachaService = GachaService();
+  GachaItem? _gachaResult;
+  bool _isPulling = false;
 
-  @override
-  void initState() {
-    super.initState();
-    // 画面が初期化されたときにガチャプールがロードされていることを保証
-    // GachaServiceがシングルトンかつ、一度しかロードしないロジックなので、
-    // ここで ensureLoaded を呼んでおけば、_pullGacha で再度 await するのは冗長ではない。
-    _gachaService.ensureLoaded();
-  }
+  // Define your gacha pool here using the updated GachaItem structure
+  // ガチャから出てくるアイテムを経験値玉（小、中、大、特大）の4つだけに限定しました
+  final List<GachaItem> _gachaPool = [
+    GachaItem(
+      id: 'exp_orb_small_gacha_001',
+      name: '経験値玉（小）',
+      type: GachaItemType.expOrb,
+      imageUrl: 'https://placehold.co/100x100/8A2BE2/FFFFFF?text=EXP(小)',
+      description: '少量の経験値が手に入る経験値玉です。',
+      expValue: 50,
+      weight: 400, // 出現確率を調整
+    ),
+    GachaItem(
+      id: 'exp_orb_medium_gacha_001',
+      name: '経験値玉（中）',
+      type: GachaItemType.expOrb,
+      imageUrl: 'https://placehold.co/100x100/8A2BE2/FFFFFF?text=EXP(中)',
+      description: '中程度の経験値が手に入る経験値玉です。',
+      expValue: 200,
+      weight: 250, // 出現確率を調整
+    ),
+    GachaItem(
+      id: 'exp_orb_large_gacha_001',
+      name: '経験値玉（大）',
+      type: GachaItemType.expOrb,
+      imageUrl: 'https://placehold.co/100x100/8A2BE2/FFFFFF?text=EXP(大)',
+      description: '大量の経験値が手に入る経験値玉です。',
+      expValue: 800,
+      weight: 100, // 出現確率を調整
+    ),
+    GachaItem(
+      id: 'exp_orb_xl_gacha_001',
+      name: '経験値玉（特大）',
+      type: GachaItemType.expOrb,
+      imageUrl: 'https://placehold.co/100x100/8A2BE2/FFFFFF?text=EXP(特大)',
+      description: '非常に大量の経験値が手に入る貴重な経験値玉です。',
+      expValue: 3000,
+      weight: 20, // 出現確率を調整
+    ),
+  ];
 
   void _pullGacha() async {
-    // ガチャプールが確実にロードされるまで待機
-    await _gachaService.ensureLoaded();
-
     final gameState = Provider.of<GameState>(context, listen: false);
 
     if (gameState.gachaTickets <= 0) {
-      await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('ガチャチケットが足りません'),
-            content: const Text('ガチャを引くにはチケットが必要です。'),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
+      _showAlertDialog('チケット不足', 'ガチャチケットが足りません！');
       return;
     }
 
+    setState(() {
+      _isPulling = true;
+      _gachaResult = null;
+    });
+
+    await Future.delayed(const Duration(seconds: 2));
+
     gameState.addGachaTickets(-1); // ガチャチケットを1枚消費
 
-    try {
-      final GachaItem result = _gachaService.pullGacha(); // GachaServiceのインスタンスを利用
-
-      // モンスターはガチャから出ない設定なので、このブロックは基本的に実行されない
-      if (result.type == 'monster' && result.monsterId != null) {
-        final Monster? awardedMonsterTemplate = _gachaService.allMonsters.firstWhereOrNull(
-              (m) => m.id == result.monsterId,
-        );
-
-        if (awardedMonsterTemplate != null) {
-          final newMonsterInstance = Monster(
-            id: 'gacha_${DateTime.now().microsecondsSinceEpoch}', // ユニークなIDを生成
-            name: awardedMonsterTemplate.name,
-            attribute: awardedMonsterTemplate.attribute,
-            imageUrl: awardedMonsterTemplate.imageUrl, // allMonstersのimageUrlパスが正しいことを前提
-            maxHp: awardedMonsterTemplate.maxHp,
-            attack: awardedMonsterTemplate.attack,
-            defense: awardedMonsterTemplate.defense,
-            speed: awardedMonsterTemplate.speed,
-            level: 1, // ガチャで獲得したモンスターはレベル1から
-            currentExp: 0,
-            currentHp: awardedMonsterTemplate.maxHp, // HPは最大値で初期化
-            description: awardedMonsterTemplate.description,
-          );
-          gameState.addMonster(newMonsterInstance); // ゲーム状態にモンスターを追加
-
-          // ガチャ結果ダイアログを表示
-          await showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (BuildContext context) {
-              return GachaResultDialog(obtainedMonster: newMonsterInstance);
-            },
-          );
-        } else {
-          await showDialog(
-            context: context,
-            builder: (BuildContext context) {
-              return AlertDialog(
-                title: const Text('エラー'),
-                content: const Text('未知のモンスターが出現しました。開発者にお問い合わせください。'),
-                actions: <Widget>[
-                  TextButton(
-                    child: const Text('OK'),
-                    onPressed: () {
-                      Navigator.of(context).pop();
-                    },
-                  ),
-                ],
-              );
-            },
-          );
+    // ガチャの重みに基づいてアイテムを選択
+    final totalWeight = _gachaPool.fold(0.0, (sum, item) => sum + (item.weight ?? 0.0));
+    double randomPoint = math.Random().nextDouble() * totalWeight;
+    GachaItem result = _gachaPool.first; // デフォルト値
+    for (var item in _gachaPool) {
+      if (item.weight != null) {
+        randomPoint -= item.weight!;
+        if (randomPoint < 0) {
+          result = item;
+          break;
         }
-      } else if (result.type == 'ticket' && result.ticketAmount != null) {
-        // チケット獲得の場合
-        gameState.addGachaTickets(result.ticketAmount!);
-        await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('ガチャ結果！'),
-              content: Text('${result.ticketAmount}枚のガチャチケットをゲットしました！'),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('OK'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      } else if (result.type == 'item') {
-        // アイテム獲得の場合
-        // TODO: 実際のアイテム獲得ロジックをここに追加する（例: アイテムインベントリに追加など）
-        await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('ガチャ結果！'),
-              content: Text('${result.name}をゲットしました！'),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('OK'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
-      } else {
-        // その他の不明な結果の場合
-        await showDialog(
-          context: context,
-          builder: (BuildContext context) {
-            return AlertDialog(
-              title: const Text('ガチャ結果！'),
-              content: Text('${result.name}をゲットしました！ (タイプ: ${result.type})'),
-              actions: <Widget>[
-                TextButton(
-                  child: const Text('OK'),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                  },
-                ),
-              ],
-            );
-          },
-        );
       }
-    } catch (e) {
-      await showDialog(
-        context: context,
-        builder: (BuildContext context) {
-          return AlertDialog(
-            title: const Text('エラーが発生しました'),
-            content: Text('ガチャを引く際にエラーが発生しました: $e'),
-            actions: <Widget>[
-              TextButton(
-                child: const Text('OK'),
-                onPressed: () {
-                  Navigator.of(context).pop();
-                },
-              ),
-            ],
-          );
-        },
-      );
-      debugPrint('ガチャ実行エラー: $e');
     }
+
+    setState(() {
+      _gachaResult = result;
+      _isPulling = false;
+    });
+
+    _handleGachaResult(result, gameState);
+  }
+
+  void _handleGachaResult(GachaItem result, GameState gameState) {
+    String message;
+    switch (result.type) {
+    // 経験値玉以外のケースは削除しました
+      case GachaItemType.expOrb:
+        if (result.expValue != null) {
+          gameState.addInventoryItem(result); // 経験値玉をインベントリに追加
+          message = '${result.expValue}経験値の${result.name}をゲットしました！';
+        } else {
+          message = '経験値玉をゲットしましたが、経験値量が不明です。';
+        }
+        break;
+      default:
+        message = '何かが当たりました！';
+        break;
+    }
+
+    _showAlertDialog('ガチャ結果', message);
+  }
+
+  void _showAlertDialog(String title, String content) {
+    showDialog(
+      context: context,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text(title),
+          content: Text(content),
+          actions: <Widget>[
+            TextButton(
+              onPressed: () {
+                Navigator.of(context).pop();
+              },
+              child: const Text('OK'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   @override
   Widget build(BuildContext context) {
-    final gameState = Provider.of<GameState>(context);
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('ガチャ'),
-        centerTitle: true,
-        backgroundColor: Colors.amber,
-        foregroundColor: Colors.black87,
+        backgroundColor: Colors.blueAccent,
       ),
-      body: Center(
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            Container(
-              padding: const EdgeInsets.all(10),
-              decoration: BoxDecoration(
-                color: Colors.amber[100],
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.amber, width: 2),
-              ),
-              child: Text(
-                '現在のチケット: ${gameState.gachaTickets}枚',
-                style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black87),
-              ),
-            ),
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: gameState.gachaTickets > 0 ? _pullGacha : null,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.amber,
-                foregroundColor: Colors.black87,
-                padding: const EdgeInsets.symmetric(horizontal: 50, vertical: 20),
-                textStyle: const TextStyle(fontSize: 20),
-                elevation: 5,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(15),
-                ),
-              ),
-              child: const Column(
+      body: Consumer<GameState>(
+        builder: (context, gameState, child) {
+          return Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  Icon(Icons.stars, size: 50),
-                  SizedBox(height: 10),
                   Text(
-                    'ガチャを引く (1回)',
-                    style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    '現在のチケット: ${gameState.gachaTickets}枚',
+                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+                  ),
+                  const SizedBox(height: 30),
+                  ElevatedButton(
+                    onPressed: gameState.gachaTickets > 0 ? _pullGacha : null,
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                      textStyle: const TextStyle(fontSize: 20),
+                      backgroundColor: Colors.green,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      elevation: 5,
+                    ),
+                    child: _isPulling
+                        ? const CircularProgressIndicator(color: Colors.white)
+                        : const Text('ガチャを引く'),
+                  ),
+                  const SizedBox(height: 30),
+                  if (_gachaResult != null) ...[
+                    Text(
+                      '結果: ${_gachaResult!.name}',
+                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
+                    ),
+                    const SizedBox(height: 20),
+                    Image.network(
+                      _gachaResult!.imageUrl ?? 'https://placehold.co/150x150/CCCCCC/000000?text=No+Image', // Fallback
+                      width: 150,
+                      height: 150,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 150,
+                          height: 150,
+                          color: Colors.grey,
+                          child: const Icon(Icons.broken_image, color: Colors.white),
+                        );
+                      },
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      _gachaResult!.description ?? '説明なし', // Use null-aware operator
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(fontSize: 16),
+                    ),
+                  ],
+                  const Spacer(),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.pop(context);
+                    },
+                    style: ElevatedButton.styleFrom(
+                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                      textStyle: const TextStyle(fontSize: 18),
+                      backgroundColor: Colors.redAccent,
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                    ),
+                    child: const Text('戻る'),
                   ),
                 ],
               ),
             ),
-            const SizedBox(height: 30),
-            const Text(
-              'ガチャを引いてみよう！\n新しいアイテムをゲットできるかも！？', // メッセージをアイテム向けに調整
-              style: TextStyle(fontSize: 16, color: Colors.grey),
-              textAlign: TextAlign.center,
-            ),
-          ],
-        ),
+          );
+        },
       ),
     );
   }
