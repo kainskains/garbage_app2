@@ -102,7 +102,7 @@ class MonsterListScreen extends StatelessWidget {
                           children: [
                             const Icon(Icons.favorite, size: 16, color: Colors.red),
                             const SizedBox(width: 4),
-                            Text('HP: ${monster.currentHp}/${monster.maxHp}'),
+                            Text('HP: ${monster.maxHp}'),
                             const SizedBox(width: 12),
                             const Icon(Icons.gavel, size: 16, color: Colors.blue),
                             const SizedBox(width: 4),
