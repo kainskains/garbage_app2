@@ -54,18 +54,19 @@ class UserDataService {
   // モンスターを追加
   Future<void> addMonster(String name, MonsterAttribute attribute, String imageUrl) async {
     UserData userData = await loadUserData();
+    final int initialMaxHp = 100; // 仮の初期最大HP
     final newMonster = Monster(
       id: DateTime.now().millisecondsSinceEpoch.toString(), // ユニークなIDを生成
       name: name,
       attribute: attribute,
       imageUrl: imageUrl,
-      maxHp: 100, // 仮の初期ステータス
+      maxHp: initialMaxHp, // 仮の初期ステータス
       attack: 20,
       defense: 10,
       speed: 15,
       level: 1,
       currentExp: 0,
-
+      currentHp: initialMaxHp, // ★ここを追加: 初期HPはmaxHpと同じにする★
     );
     final updatedMonsters = List<Monster>.from(userData.ownedMonsters)..add(newMonster);
     userData = userData.copyWith(ownedMonsters: updatedMonsters);
@@ -76,6 +77,7 @@ class UserDataService {
   // ユーザーが持っているモンスターを取得
   Future<List<Monster>> getOwnedMonsters() async {
     UserData userData = await loadUserData();
+    // Monster.fromJson は currentHp を考慮しているので、ここで修正は不要
     return userData.ownedMonsters;
   }
 }

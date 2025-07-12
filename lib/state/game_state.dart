@@ -1,56 +1,51 @@
 // lib/state/game_state.dart
 
-import 'package:flutter/foundation.dart'; // ChangeNotifierのために必要
-import 'package:garbage_app/models/monster.dart'; // Monsterモデルをインポート
+import 'package:flutter/foundation.dart';
+import 'package:garbage_app/models/monster.dart';
 
 class GameState extends ChangeNotifier {
   List<Monster> _monsters = [];
   List<Monster> get monsters => _monsters;
 
-  int _gachaTickets = 0; // ガチャチケットの数を管理するプロパティ
-  int get gachaTickets => _gachaTickets; // ガチャチケットのゲッター
+  int _gachaTickets = 0;
+  int get gachaTickets => _gachaTickets;
 
-  // ガチャチケットを追加するメソッド
+  GameState() {
+    _loadMonsters();
+  }
+
   void addGachaTickets(int amount) {
     _gachaTickets += amount;
     print('ガチャチケットを $amount 枚獲得しました。現在のチケット数: $_gachaTickets');
-    notifyListeners(); // UIを更新するために通知
+    notifyListeners();
   }
 
-  // コンストラクタで初期データをロードするなどの処理が必要であれば追加
-  GameState() {
-    _loadMonsters(); // 例えば、UserDataServiceからモンスターをロード
-  }
-
-  // ここにモンスターを追加するメソッド（UserDatServiceから呼ばれる）
   void addMonster(Monster newMonster) {
     _monsters.add(newMonster);
-    notifyListeners(); // リストが変更されたことを通知
+    notifyListeners();
   }
 
-  // モンスターを削除するメソッド（必要に応じて）
   void removeMonster(String monsterId) {
     _monsters.removeWhere((m) => m.id == monsterId);
     notifyListeners();
   }
 
-  // 経験値獲得メソッド（MonsterクラスのgainExpを呼び出す）
+  // ★追加: 特定のモンスターに経験値を付与するメソッド★
   void gainExpToMonster(String monsterId, int expAmount) {
     final monsterIndex = _monsters.indexWhere((m) => m.id == monsterId);
     if (monsterIndex != -1) {
-      _monsters[monsterIndex].gainExp(expAmount);
-      // notifyListeners() は Monster クラスの gainExp メソッド内で呼ばれる
-      // ので、ここでは通常不要。もしモンスターリスト自体が変わったことを通知する
-      // 必要がある場合のみ追加。
-      // notifyListeners();
+      _monsters[monsterIndex].gainExp(expAmount); // MonsterクラスのgainExpを呼び出す
+      // MonsterクラスのgainExp内でnotifyListeners()が呼ばれるため、ここでは通常不要。
+      // ただし、リストの変更（例：モンスターの追加・削除）を伴う場合は、ここでもnotifyListeners()が必要。
+      // 今回は既存モンスターのプロパティ変更なので、Monster自身が通知すれば良い。
+    } else {
+      print('Warning: Monster with ID $monsterId not found to gain exp.');
     }
   }
 
-  // 保存済みのモンスターをロードするダミーメソッド（UserDatServiceからロードする想定）
-  // 実際にはUserDataServiceを使ってShared Preferencesなどからロードします
   Future<void> _loadMonsters() async {
-    // 例: 仮のモンスターを追加 (初期起動時にデータがない場合など)
     if (_monsters.isEmpty) {
+      // ダミーモンスターの初期化時に currentHp も設定するように修正
       _monsters.add(Monster(
         id: 'monster_001',
         name: 'ダミーモンスター1',
@@ -62,7 +57,7 @@ class GameState extends ChangeNotifier {
         speed: 15,
         level: 1,
         currentExp: 0,
-        currentHp: 100,
+        currentHp: 100, // ★追加: currentHpも初期化★
       ));
       _monsters.add(Monster(
         id: 'monster_002',
@@ -75,13 +70,12 @@ class GameState extends ChangeNotifier {
         speed: 13,
         level: 1,
         currentExp: 0,
-        currentHp: 120,
+        currentHp: 120, // ★追加: currentHpも初期化★
       ));
       notifyListeners();
     }
   }
 
-  // プレイヤーが選択中のモンスターを保存するプロパティ（必要に応じて）
   Monster? _selectedPlayerMonster;
   Monster? get selectedPlayerMonster => _selectedPlayerMonster;
 
@@ -89,6 +83,4 @@ class GameState extends ChangeNotifier {
     _selectedPlayerMonster = monster;
     notifyListeners();
   }
-
-// TODO: 他のゲーム状態（コイン、アイテムなど）もここに追加可能
 }

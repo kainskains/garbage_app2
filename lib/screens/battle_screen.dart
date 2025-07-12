@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart'; // Provider を使用
 import 'package:garbage_app/services/gacha_service.dart';
 import 'package:garbage_app/models/monster.dart';
+import 'package:garbage_app/state/game_state.dart'; // ★GameStateをインポート★
+import 'package:garbage_app/models/stage.dart'; // Stageモデルをインポート（経験値源）
 import 'dart:math'; // ダメージ計算に必要
 
 class BattleScreen extends StatefulWidget {
@@ -23,6 +25,7 @@ class BattleScreen extends StatefulWidget {
 class _BattleScreenState extends State<BattleScreen> {
   final GachaService _gachaService = GachaService();
   Monster? _enemyMonster; // 敵モンスター
+  Stage? _currentStage; // 現在のステージ情報 (経験値計算に使うため)
   bool _isLoadingEnemy = true;
   String? _enemyErrorMessage;
 
@@ -40,8 +43,9 @@ class _BattleScreenState extends State<BattleScreen> {
     super.initState();
     // プレイヤーモンスターの現在のHPを最大HPに戻す (バトル開始時に常に全回復)
     // これは簡易的な対応。永続的なHP管理はGameStateで行うべき
-    widget.playerMonster.currentHp = widget.playerMonster.maxHp;
-    _generateEnemy();
+    widget.playerMonster.currentHp = widget.playerMonster.maxHp; // Monsterクラスのsetterを使用
+
+    _generateEnemyAndStage(); // 敵とステージ情報を同時にロードするように変更
   }
 
   @override
@@ -50,16 +54,25 @@ class _BattleScreenState extends State<BattleScreen> {
     super.dispose();
   }
 
-  // 敵モンスター生成ロジック
-  Future<void> _generateEnemy() async {
+  // 敵モンスターとステージ情報生成ロジック
+  Future<void> _generateEnemyAndStage() async {
     setState(() {
       _isLoadingEnemy = true;
       _enemyErrorMessage = null;
     });
     try {
-      // 敵モンスターはGameStateの管理外なので、新しく生成されるたびにChangeNotifierProviderでラップする
+      // 敵モンスターをGachaServiceで生成
       final enemy = _gachaService.generateEnemyMonsterForStage(widget.stageId);
-      _enemyMonster = Monster( // GachaServiceから受け取ったデータで新しいMonsterインスタンスを作成
+
+      // Stage情報もGachaServiceから取得
+      _currentStage = _gachaService.getAllStages().firstWhere(
+            (s) => s.id == widget.stageId,
+        orElse: () => throw Exception('Stage with ID ${widget.stageId} not found.'),
+      );
+
+      // 生成された敵モンスターデータから新しいMonsterインスタンスを作成
+      // MonsterクラスのコンストラクタにはcurrentHpも渡す
+      _enemyMonster = Monster(
         id: enemy.id,
         name: enemy.name,
         attribute: enemy.attribute,
@@ -69,12 +82,15 @@ class _BattleScreenState extends State<BattleScreen> {
         defense: enemy.defense,
         speed: enemy.speed,
         level: enemy.level,
+        currentExp: enemy.currentExp, // 経験値とレベルも引き継ぐ
+        currentHp: enemy.maxHp, // 初期HPは最大HPにする
       );
       print('敵モンスターを生成しました！: ${_enemyMonster!.name} (Lv.${_enemyMonster!.level})');
+      print('ステージ情報をロードしました: ${_currentStage!.name}');
     } catch (e) {
-      print('敵モンスターの生成に失敗しました: $e');
+      print('敵モンスターまたはステージ情報の生成に失敗しました: $e');
       setState(() {
-        _enemyErrorMessage = '敵モンスターの生成に失敗しました: $e';
+        _enemyErrorMessage = '敵モンスターまたはステージ情報の生成に失敗しました: $e';
       });
     } finally {
       setState(() {
@@ -85,7 +101,7 @@ class _BattleScreenState extends State<BattleScreen> {
 
   // バトル開始処理
   void _startBattle() {
-    if (_enemyMonster == null || _isBattleInProgress) {
+    if (_enemyMonster == null || _isBattleInProgress || _currentStage == null) {
       return;
     }
 
@@ -117,7 +133,6 @@ class _BattleScreenState extends State<BattleScreen> {
     }
 
     // 1. プレイヤーの攻撃
-    // ダメージ計算 (仮: 属性相性は未実装)
     int playerDamage = max(1, widget.playerMonster.attack - (_enemyMonster!.defense ~/ 2));
     _enemyMonster!.takeDamage(playerDamage);
     _appendBattleLog('${widget.playerMonster.name} の攻撃！ ${_enemyMonster!.name} に $playerDamage ダメージ！');
@@ -154,7 +169,6 @@ class _BattleScreenState extends State<BattleScreen> {
     setState(() {
       _battleLog.add(message);
     });
-    // 次のフレームでスクロールする
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_logScrollController.hasClients) {
         _logScrollController.jumpTo(_logScrollController.position.maxScrollExtent);
@@ -171,6 +185,15 @@ class _BattleScreenState extends State<BattleScreen> {
       _appendBattleLog('--- バトル終了 ---');
       _appendBattleLog(_battleResult);
     });
+
+    if (result == '勝利' && _currentStage != null && widget.playerMonster.currentHp > 0) {
+      // ★勝利時に経験値を付与★
+      final gameState = Provider.of<GameState>(context, listen: false);
+      final int awardedExp = _currentStage!.baseExpAwarded;
+      gameState.gainExpToMonster(widget.playerMonster.id, awardedExp);
+      _appendBattleLog('${widget.playerMonster.name} は $awardedExp の経験値を獲得しました！');
+    }
+
     print('Battle finished: $_battleResult');
   }
 
@@ -192,9 +215,9 @@ class _BattleScreenState extends State<BattleScreen> {
             crossAxisAlignment: CrossAxisAlignment.stretch, // 幅いっぱいに広げる
             children: [
               Text(
-                '${currentMonster.name} HP: ${currentMonster.currentHp}/${currentMonster.maxHp}',
+                '${currentMonster.name} HP: ${currentMonster.currentHp}/${currentMonster.maxHp} (Lv.${currentMonster.level})', // レベルも表示
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 5),
               LinearProgressIndicator(
@@ -204,6 +227,15 @@ class _BattleScreenState extends State<BattleScreen> {
                 minHeight: 15, // バーの高さ
                 borderRadius: BorderRadius.circular(8), // 角丸
               ),
+              if (monster == widget.playerMonster) // プレイヤーモンスターのみ経験値バー表示
+                Padding(
+                  padding: const EdgeInsets.only(top: 5.0),
+                  child: Text(
+                    'EXP: ${currentMonster.currentExp}/${currentMonster.expToNextLevel}',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 14, color: Colors.blueGrey),
+                  ),
+                ),
             ],
           );
         },
@@ -220,10 +252,8 @@ class _BattleScreenState extends State<BattleScreen> {
         foregroundColor: Colors.white,
         centerTitle: true,
       ),
-      // body の直下を Column にし、レイアウトを厳密に制御
       body: Column(
         children: [
-          // 上部固定エリア（プレイヤー、敵モンスター情報、ボタン）
           Padding(
             padding: const EdgeInsets.all(16.0),
             child: Column(
@@ -251,7 +281,6 @@ class _BattleScreenState extends State<BattleScreen> {
                       style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.deepOrange),
                     ),
                     const SizedBox(height: 10),
-                    // アセットロードエラー対策
                     Image.asset(
                       _enemyMonster!.imageUrl,
                       width: 150,
@@ -272,11 +301,13 @@ class _BattleScreenState extends State<BattleScreen> {
                 const SizedBox(height: 30),
 
                 // プレイヤーモンスター情報
-                Text(
-                  'あなたのモンスター: ${widget.playerMonster.name} (Lv.${widget.playerMonster.level})',
-                  style: const TextStyle(fontSize: 20, color: Colors.blue),
-                ),
-                _buildHpBar(widget.playerMonster),
+                // PlayerMonsterはwidget.playerMonsterとして直接使用するため、
+                // ChangeNotifierProvider.value でラップしてHPバーに渡す。
+                // GameStateから取得するモンスターは既にProviderで提供されているので
+                // 再度Providerでラップする必要はないが、HPバーのWidgetが
+                // MonsterをConsumerで受ける形なので、ここでValueNotifierと同じように
+                // MonsterインスタンスをValueとして提供する。
+                _buildHpBar(widget.playerMonster), // 既存のモンスターインスタンスを渡す
                 const SizedBox(height: 30),
 
                 // バトル開始/終了ボタンと結果表示
@@ -313,7 +344,7 @@ class _BattleScreenState extends State<BattleScreen> {
                       ),
                     ],
                   )
-                else if (_enemyMonster != null) // 敵がいる場合のみバトル開始ボタンを表示
+                else if (_enemyMonster != null && _currentStage != null) // 敵とステージ情報がある場合のみバトル開始ボタンを表示
                     ElevatedButton(
                       onPressed: _startBattle,
                       style: ElevatedButton.styleFrom(
@@ -327,9 +358,8 @@ class _BattleScreenState extends State<BattleScreen> {
               ],
             ),
           ),
-          const SizedBox(height: 20), // バトルログとの間隔
+          const SizedBox(height: 20),
 
-          // バトルログ表示エリア（Expanded で残りスペースを埋める）
           Expanded(
             child: Container(
               margin: const EdgeInsets.symmetric(horizontal: 16.0),
@@ -340,7 +370,7 @@ class _BattleScreenState extends State<BattleScreen> {
                 color: Colors.white.withOpacity(0.9),
               ),
               child: ListView.builder(
-                controller: _logScrollController, // スクロール制御を適用
+                controller: _logScrollController,
                 itemCount: _battleLog.length,
                 itemBuilder: (context, index) {
                   return Padding(
@@ -354,7 +384,7 @@ class _BattleScreenState extends State<BattleScreen> {
               ),
             ),
           ),
-          const SizedBox(height: 16), // 画面下部のパディング
+          const SizedBox(height: 16),
         ],
       ),
     );
