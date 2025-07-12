@@ -3,11 +3,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:garbage_app/state/game_state.dart';
 import 'package:garbage_app/models/monster.dart';
+import 'package:garbage_app/screens/monster_detail_screen.dart'; // ★ここを追加★
 
 class MonsterListScreen extends StatelessWidget {
   const MonsterListScreen({super.key});
 
-  // 属性を日本語に変換するヘルパーメソッド
+  // 属性を日本語に変換するヘルパーメソッド (これはそのまま残します)
   String _getAttributeJapaneseName(MonsterAttribute attribute) {
     switch (attribute) {
       case MonsterAttribute.fire:
@@ -22,8 +23,7 @@ class MonsterListScreen extends StatelessWidget {
         return '闇属性';
       case MonsterAttribute.none:
         return 'ノーマル属性';
-      default:
-        return '不明';
+    // default: return '不明'; // 全てのケースを網羅していれば不要
     }
   }
 
@@ -32,8 +32,6 @@ class MonsterListScreen extends StatelessWidget {
     final gameState = Provider.of<GameState>(context);
 
     return Scaffold(
-      // AppBarは_MainScreenで管理されるため、通常は不要。
-      // もしこの画面が単独でNavigator.pushされる可能性があるなら、以下を有効化。
       appBar: AppBar(
         title: const Text('モンスター図鑑'),
         centerTitle: true,
@@ -48,102 +46,75 @@ class MonsterListScreen extends StatelessWidget {
           style: TextStyle(fontSize: 20, color: Colors.grey),
         ),
       )
-          : ListView.builder(
+          : GridView.builder(
+        padding: const EdgeInsets.all(8.0),
+        gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
+          crossAxisCount: 3,
+          crossAxisSpacing: 8.0,
+          mainAxisSpacing: 8.0,
+          childAspectRatio: 0.8,
+        ),
         itemCount: gameState.monsters.length,
         itemBuilder: (context, index) {
           final monster = gameState.monsters[index];
-          final double expRatio = monster.expToNextLevel > 0
-              ? monster.currentExp / monster.expToNextLevel
-              : 0.0;
 
-          return Card(
-            margin: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 8.0),
-            elevation: 4,
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+          return GestureDetector(
+            onTap: () {
+              // ★ここを修正: モンスター詳細画面へ遷移するロジックを有効化★
+              Navigator.push(
+                context,
+                MaterialPageRoute(
+                  builder: (context) => MonsterDetailScreen(monster: monster), // タップしたモンスターを渡す
+                ),
+              );
+              // print('${monster.name} がタップされました（詳細表示へ遷移）'); // 不要になるため削除
+            },
+            child: Card(
+              margin: EdgeInsets.zero,
+              elevation: 2,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              clipBehavior: Clip.antiAlias,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  // モンスター画像
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(8.0),
-                    child: Image.asset(
-                      monster.imageUrl,
-                      width: 80,
-                      height: 80,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return const Icon(Icons.broken_image, size: 80, color: Colors.grey);
-                      },
-                    ),
-                  ),
-                  const SizedBox(width: 16),
-                  // モンスター情報
                   Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
-                          monster.name,
-                          style: const TextStyle(
-                            fontSize: 20,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.deepPurple,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          'Lv.${monster.level} / ${_getAttributeJapaneseName(monster.attribute)}',
-                          style: TextStyle(fontSize: 14, color: Colors.grey[700]),
-                        ),
-                        const SizedBox(height: 8),
-                        Row(
-                          children: [
-                            const Icon(Icons.favorite, size: 16, color: Colors.red),
-                            const SizedBox(width: 4),
-                            Text('HP: ${monster.maxHp}'),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.gavel, size: 16, color: Colors.blue),
-                            const SizedBox(width: 4),
-                            Text('攻撃: ${monster.attack}'),
-                          ],
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            const Icon(Icons.shield, size: 16, color: Colors.brown),
-                            const SizedBox(width: 4),
-                            Text('防御: ${monster.defense}'),
-                            const SizedBox(width: 12),
-                            const Icon(Icons.speed, size: 16, color: Colors.purple),
-                            const SizedBox(width: 4),
-                            Text('素早さ: ${monster.speed}'),
-                          ],
-                        ),
-                        const SizedBox(height: 12),
-                        // 経験値バー
-                        if (monster.level < 100) // 例: レベル上限を設定
-                          Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              Text(
-                                'EXP: ${monster.currentExp} / ${monster.expToNextLevel}',
-                                style: const TextStyle(fontSize: 12, color: Colors.black54),
-                              ),
-                              const SizedBox(height: 4),
-                              LinearProgressIndicator(
-                                value: expRatio,
-                                backgroundColor: Colors.grey[300],
-                                color: Colors.amber,
-                                minHeight: 8,
-                                borderRadius: BorderRadius.circular(4),
-                              ),
-                            ],
-                          ),
-                      ],
+                    child: Padding(
+                      padding: const EdgeInsets.all(4.0),
+                      child: monster.imageUrl.isNotEmpty
+                          ? Image.asset(
+                        monster.imageUrl,
+                        fit: BoxFit.contain,
+                        errorBuilder: (context, error, stackTrace) {
+                          return const Icon(Icons.broken_image, size: 60, color: Colors.grey);
+                        },
+                      )
+                          : const Icon(Icons.help_outline, size: 60, color: Colors.grey),
                     ),
                   ),
+                  Padding(
+                    padding: const EdgeInsets.only(bottom: 8.0, left: 4.0, right: 4.0),
+                    child: Text(
+                      'Lv.${monster.level}',
+                      style: const TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.black87,
+                      ),
+                    ),
+                  ),
+                  // 必要であれば、名前もコンパクトに追加
+                  // Padding(
+                  //   padding: const EdgeInsets.only(bottom: 4.0),
+                  //   child: Text(
+                  //     monster.name,
+                  //     maxLines: 1,
+                  //     overflow: TextOverflow.ellipsis,
+                  //     style: const TextStyle(
+                  //       fontSize: 12,
+                  //       color: Colors.black54,
+                  //     ),
+                  //   ),
+                  // ),
                 ],
               ),
             ),
