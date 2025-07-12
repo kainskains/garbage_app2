@@ -19,8 +19,8 @@ class GameState extends ChangeNotifier {
     _monsters.add(
       Monster(
         id: 'player_monster_1',
-        name: '初期モンスター',
-        attribute: MonsterAttribute.none,
+        name: 'YOU',
+        attribute: MonsterAttribute.fire,
         imageUrl: 'assets/images/monsters/monster_rare_a.png',
         maxHp: 100,
         attack: 10,
@@ -29,14 +29,10 @@ class GameState extends ChangeNotifier {
         level: 1,
         currentExp: 0,
         currentHp: 100,
-        description: 'あなたの最初の相棒。',
+        description: '冒険の始まり',
       ),
     );
     // 例: 初期インベントリ（経験値玉を試すために）
-    // ★ダミーアイテムの追加★
-    _inventory.add(GachaItem(id: 'exp_orb_small_001', name: '経験値玉（小）', type: GachaItemType.expOrb, weight: 0, expValue: 100, imageUrl: 'assets/images/items/exp_orb_small.png'));
-    _inventory.add(GachaItem(id: 'exp_orb_medium_001', name: '経験値玉（中）', type: GachaItemType.expOrb, weight: 0, expValue: 500, imageUrl: 'assets/images/items/exp_orb_medium.png'));
-    _inventory.add(GachaItem(id: 'gold_bag_001', name: 'ゴールド袋', type: GachaItemType.gold, weight: 0, goldValue: 1000, imageUrl: 'assets/images/items/gold_bag.png'));
 
     // 初期ガチャチケット
     _gachaTickets = 5; // 例: 5枚からスタート

@@ -23,7 +23,7 @@ class _GachaScreenState extends State<GachaScreen> {
       id: 'exp_orb_small_gacha_001',
       name: '経験値玉（小）',
       type: GachaItemType.expOrb,
-      imageUrl: 'https://placehold.co/100x100/8A2BE2/FFFFFF?text=EXP(小)',
+      imageUrl: 'assets/images/items/exp_orb_small.png', // アセットパスに変更
       description: '少量の経験値が手に入る経験値玉です。',
       expValue: 50,
       weight: 400, // 出現確率を調整
@@ -32,7 +32,7 @@ class _GachaScreenState extends State<GachaScreen> {
       id: 'exp_orb_medium_gacha_001',
       name: '経験値玉（中）',
       type: GachaItemType.expOrb,
-      imageUrl: 'https://placehold.co/100x100/8A2BE2/FFFFFF?text=EXP(中)',
+      imageUrl: 'assets/images/items/exp_orb_medium.png', // アセットパスに変更
       description: '中程度の経験値が手に入る経験値玉です。',
       expValue: 200,
       weight: 250, // 出現確率を調整
@@ -41,7 +41,7 @@ class _GachaScreenState extends State<GachaScreen> {
       id: 'exp_orb_large_gacha_001',
       name: '経験値玉（大）',
       type: GachaItemType.expOrb,
-      imageUrl: 'https://placehold.co/100x100/8A2BE2/FFFFFF?text=EXP(大)',
+      imageUrl: 'assets/images/items/exp_orb_large.png', // アセットパスに変更
       description: '大量の経験値が手に入る経験値玉です。',
       expValue: 800,
       weight: 100, // 出現確率を調整
@@ -50,7 +50,7 @@ class _GachaScreenState extends State<GachaScreen> {
       id: 'exp_orb_xl_gacha_001',
       name: '経験値玉（特大）',
       type: GachaItemType.expOrb,
-      imageUrl: 'https://placehold.co/100x100/8A2BE2/FFFFFF?text=EXP(特大)',
+      imageUrl: 'assets/images/items/exp_orb_xl.png', // アセットパスに変更
       description: '非常に大量の経験値が手に入る貴重な経験値玉です。',
       expValue: 3000,
       weight: 20, // 出現確率を調整
@@ -96,26 +96,6 @@ class _GachaScreenState extends State<GachaScreen> {
     _handleGachaResult(result, gameState);
   }
 
-  void _handleGachaResult(GachaItem result, GameState gameState) {
-    String message;
-    switch (result.type) {
-    // 経験値玉以外のケースは削除しました
-      case GachaItemType.expOrb:
-        if (result.expValue != null) {
-          gameState.addInventoryItem(result); // 経験値玉をインベントリに追加
-          message = '${result.expValue}経験値の${result.name}をゲットしました！';
-        } else {
-          message = '経験値玉をゲットしましたが、経験値量が不明です。';
-        }
-        break;
-      default:
-        message = '何かが当たりました！';
-        break;
-    }
-
-    _showAlertDialog('ガチャ結果', message);
-  }
-
   void _showAlertDialog(String title, String content) {
     showDialog(
       context: context,
@@ -134,6 +114,25 @@ class _GachaScreenState extends State<GachaScreen> {
         );
       },
     );
+  }
+
+  void _handleGachaResult(GachaItem result, GameState gameState) {
+    String message;
+    switch (result.type) {
+      case GachaItemType.expOrb:
+        if (result.expValue != null) {
+          gameState.addInventoryItem(result); // 経験値玉をインベントリに追加
+          message = '${result.expValue}経験値の${result.name}をゲットしました！';
+        } else {
+          message = '経験値玉をゲットしましたが、経験値量が不明です。';
+        }
+        break;
+      default:
+        message = '何かが当たりました！';
+        break;
+    }
+
+    _showAlertDialog('ガチャ結果', message);
   }
 
   @override
@@ -179,8 +178,9 @@ class _GachaScreenState extends State<GachaScreen> {
                       style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
                     ),
                     const SizedBox(height: 20),
-                    Image.network(
-                      _gachaResult!.imageUrl ?? 'https://placehold.co/150x150/CCCCCC/000000?text=No+Image', // Fallback
+                    // Image.network から Image.asset に変更
+                    Image.asset(
+                      _gachaResult!.imageUrl ?? 'assets/images/placeholder.png', // Fallbackをアセットパスに変更
                       width: 150,
                       height: 150,
                       fit: BoxFit.cover,

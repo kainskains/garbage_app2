@@ -93,7 +93,7 @@ class MonsterDetailScreen extends StatelessWidget {
 
                         // ステータス表示
                         _buildStatRow(context, Icons.favorite, 'HP',
-                            monster.currentHp, monster.maxHp, Colors.red),
+                            monster.maxHp, null, Colors.red),
                         _buildStatRow(context, Icons.gavel, '攻撃', monster.attack,
                             null, Colors.blue),
                         _buildStatRow(context, Icons.shield, '防御', monster.defense,
@@ -139,20 +139,7 @@ class MonsterDetailScreen extends StatelessWidget {
                 ),
                 const SizedBox(height: 20),
 
-                // デバッグ用: 経験値獲得ボタン
-                ElevatedButton(
-                  onPressed: () {
-                    Provider.of<Monster>(context, listen: false).gainExp(50);
-                  },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.green,
-                    foregroundColor: Colors.white,
-                    padding:
-                    const EdgeInsets.symmetric(horizontal: 20, vertical: 10),
-                    textStyle: const TextStyle(fontSize: 16),
-                  ),
-                  child: const Text('経験値獲得 (テスト用)'),
-                ),
+                // 経験値獲得ボタンを削除しました
               ],
             ),
           ),
