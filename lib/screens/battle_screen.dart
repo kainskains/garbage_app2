@@ -1,4 +1,4 @@
-// lib/screens/battle_screen.dart
+// lib/screens/battle_screen.dart (修正後の全体コード)
 
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -39,8 +39,7 @@ class _BattleScreenState extends State<BattleScreen> {
   @override
   void initState() {
     super.initState();
-    // ★ここを削除またはコメントアウト★
-    // widget.playerMonster.currentHp = widget.playerMonster.maxHp;
+    // widget.playerMonster.currentHp = widget.playerMonster.maxHp; // これはここで削除済み
     _generateEnemyAndStage();
   }
 
@@ -56,8 +55,12 @@ class _BattleScreenState extends State<BattleScreen> {
       _enemyErrorMessage = null;
     });
     try {
+      // ★修正箇所１：GachaServiceの全データロードを保証するawaitを追加★
+      await _gachaService.ensureLoaded();
+
       final enemy = _gachaService.generateEnemyMonsterForStage(widget.stageId);
-      _currentStage = _gachaService.getAllStages().firstWhere(
+      // ★修正箇所２：getAllStages() を allStages ゲッターに修正★
+      _currentStage = _gachaService.allStages.firstWhere(
             (s) => s.id == widget.stageId,
         orElse: () => throw Exception('Stage with ID ${widget.stageId} not found.'),
       );
@@ -67,10 +70,10 @@ class _BattleScreenState extends State<BattleScreen> {
         name: enemy.name,
         attribute: enemy.attribute,
         imageUrl: enemy.imageUrl,
-        maxHp: enemy.maxHp, // Monsterクラスの変更に応じてbaseMaxHpなどに修正が必要になる可能性あり
-        attack: enemy.attack, // baseAttack
-        defense: enemy.defense, // baseDefense
-        speed: enemy.speed, // baseSpeed
+        maxHp: enemy.maxHp,
+        attack: enemy.attack,
+        defense: enemy.defense,
+        speed: enemy.speed,
         level: enemy.level,
         currentExp: enemy.currentExp,
         currentHp: enemy.maxHp, // 敵の初期HPは最大HP
@@ -165,17 +168,15 @@ class _BattleScreenState extends State<BattleScreen> {
       _appendBattleLog(_battleResult);
     });
 
-    if (result == '勝利' && _currentStage != null) { // プレイヤーHPが0以下で勝利はないので条件から外した
+    if (result == '勝利' && _currentStage != null) {
       final gameState = Provider.of<GameState>(context, listen: false);
       final int awardedExp = _currentStage!.baseExpAwarded;
       gameState.gainExpToMonster(widget.playerMonster.id, awardedExp);
       _appendBattleLog('${widget.playerMonster.name} は $awardedExp の経験値を獲得しました！');
     }
 
-    // ★ここに追加: プレイヤーモンスターのHPを最大値に戻す★
+    // プレイヤーモンスターのHPを最大値に戻す
     widget.playerMonster.currentHp = widget.playerMonster.maxHp;
-
-
 
     print('Battle finished: $_battleResult');
   }

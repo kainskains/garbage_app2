@@ -29,9 +29,8 @@ class _StageSelectionScreenState extends State<StageSelectionScreen> {
       _errorMessage = null;
     });
     try {
-      await _gachaService.loadGachaPool();
-      await _gachaService.loadMonsters();
-      await _gachaService.loadStages();
+      // ★ここを修正★: 個別のロードメソッドではなく、ensureLoaded() を呼び出す
+      await _gachaService.ensureLoaded();
       print('StageSelectionScreen: All GachaService data loaded.');
     } catch (e) {
       print('StageSelectionScreen: Error loading GachaService data: $e');
@@ -83,7 +82,8 @@ class _StageSelectionScreenState extends State<StageSelectionScreen> {
       );
     }
 
-    final List<Stage> stages = _gachaService.getAllStages();
+    // ★ここを修正★: getAllStages() ではなく、allStages ゲッターを使用する
+    final List<Stage> stages = _gachaService.allStages;
 
     if (stages.isEmpty) {
       return Center(
@@ -133,12 +133,11 @@ class _StageSelectionScreenState extends State<StageSelectionScreen> {
               ),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
-                // ★修正: MonsterSelectionScreen に stageId を渡して遷移 ★
                 Navigator.push(
                   context,
                   MaterialPageRoute(
                     builder: (context) => MonsterSelectionScreen(
-                      selectedStageId: stage.id, // ★引数名を正確に selectedStageId に合わせる ★
+                      selectedStageId: stage.id,
                     ),
                   ),
                 );
