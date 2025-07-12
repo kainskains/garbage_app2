@@ -19,8 +19,8 @@ class GameState extends ChangeNotifier {
     _monsters.add(
       Monster(
         id: 'player_monster_1',
-        name: 'YOU',
-        attribute: MonsterAttribute.fire,
+        name: '初期モンスター',
+        attribute: MonsterAttribute.none,
         imageUrl: 'assets/images/monsters/monster_rare_a.png',
         maxHp: 100,
         attack: 10,
@@ -29,10 +29,9 @@ class GameState extends ChangeNotifier {
         level: 1,
         currentExp: 0,
         currentHp: 100,
-        description: '冒険の始まり',
+        description: 'あなたの最初の相棒。',
       ),
     );
-    // 例: 初期インベントリ（経験値玉を試すために）
 
     // 初期ガチャチケット
     _gachaTickets = 5; // 例: 5枚からスタート
@@ -49,7 +48,7 @@ class GameState extends ChangeNotifier {
     notifyListeners();
   }
 
-  // ★新しいメソッド: 経験値玉を使ってモンスターに経験値を与える★
+  // ★経験値玉を使ってモンスターに経験値を与える（単体使用用、今回は使わないが残しておく）★
   void useExperienceOrb(String monsterId, String orbId) {
     final monsterIndex = _monsters.indexWhere((m) => m.id == monsterId);
     final orbIndex = _inventory.indexWhere((item) => item.id == orbId && item.type == GachaItemType.expOrb);
@@ -70,6 +69,39 @@ class GameState extends ChangeNotifier {
       print('エラー: モンスターまたは経験値玉が見つかりません。');
     }
   }
+
+  // ★新しいメソッド: 経験値玉をまとめて使用する★
+  void useExperienceOrbBatch(String monsterId, String orbId, int quantity) {
+    final monsterIndex = _monsters.indexWhere((m) => m.id == monsterId);
+
+    if (monsterIndex == -1) {
+      print('エラー: モンスターが見つかりません。');
+      return;
+    }
+
+    final monster = _monsters[monsterIndex];
+    int totalExpGained = 0;
+    int itemsRemoved = 0;
+
+    // 逆順にループして削除してもインデックスが狂わないようにする
+    for (int i = _inventory.length - 1; i >= 0 && itemsRemoved < quantity; i--) {
+      final item = _inventory[i];
+      if (item.id == orbId && item.type == GachaItemType.expOrb && item.expValue != null) {
+        totalExpGained += item.expValue!;
+        _inventory.removeAt(i);
+        itemsRemoved++;
+      }
+    }
+
+    if (itemsRemoved > 0) {
+      monster.gainExp(totalExpGained); // モンスターに合計経験値を与える
+      notifyListeners();
+      print('${monster.name} は経験値玉を $itemsRemoved 個使って $totalExpGained 経験値を獲得しました！');
+    } else {
+      print('エラー: 指定された経験値玉が見つからないか、数量が不足しています。');
+    }
+  }
+
 
   // バトル勝利時などに経験値を獲得する既存のメソッド
   void gainExpToMonster(String monsterId, int exp) {
