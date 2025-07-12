@@ -1,0 +1,29 @@
+[
+  {
+    "name": "経験値玉(小)",
+    "imageUrl": "assets/images/items/exp_orb_small.png",
+    "isMonster": false,
+    "ticketAmount": 0,
+    "weight": 50.0
+  },
+  {
+    "name": "ビンゴ玉",
+    "imageUrl": "assets/images/items/bingo_ball.png",
+    "isMonster": false,
+    "ticketAmount": 0,
+    "weight": 30.0
+  },
+  {
+    "name": "コイン100枚",
+    "imageUrl": "assets/images/items/coin.png",
+    "isMonster": false,
+    "ticketAmount": 0,
+    "weight": 15.0
+  },
+  {
+    "name": "ガチャチケット x5",
+    "isMonster": false,
+    "ticketAmount": 5,
+    "weight": 5.0
+  }
+]

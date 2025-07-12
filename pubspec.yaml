@@ -13,9 +13,11 @@ dependencies:
 
   cupertino_icons: ^1.0.8
   image_picker: ^1.1.2
-  tflite_flutter: ^0.11.0 # または pub.dev で最新の安定版を確認し、それに合わせる
-  image: ^4.1.7 # <-- これを追加
-  path_provider: ^2.0.15 # <-- これも追加推奨 (オプション)
+  tflite_flutter: ^0.11.0
+  image: ^4.2.0
+  provider: ^6.1.2
+  path_provider: ^2.0.15
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:
@@ -25,6 +27,14 @@ dev_dependencies:
 flutter:
   uses-material-design: true
 
+  # アセット（画像、データファイルなど）のパスをここに指定します。
+  # ディレクトリを指定する場合、パスの最後にスラッシュ（/）が必要です。
   assets:
     - assets/garbage_model.tflite
     - assets/labels.txt
+    # ★ここを修正★
+    - assets/data/gacha_pool.json  # 個別のJSONファイルを指定
+    - assets/data/monsters.json   # 個別のJSONファイルを指定
+    - assets/data/stages.json     # 個別のJSONファイルを指定
+    - assets/images/items/        # アイテム画像フォルダを指定（サブフォルダ内のファイルも含む）
+    - assets/images/monsters/     # モンスター画像フォルダを指定（サブフォルダ内のファイルも含む）
