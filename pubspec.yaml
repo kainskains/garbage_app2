@@ -18,6 +18,7 @@ dependencies:
   provider: ^6.1.2
   path_provider: ^2.0.15
   shared_preferences: ^2.5.3
+  collection: ^1.18.0 # ★この行を追加★
 
 dev_dependencies:
   flutter_test:

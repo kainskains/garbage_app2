@@ -1,4 +1,5 @@
 // lib/services/gacha_service.dart
+
 import 'dart:convert';
 import 'dart:math';
 import 'package:flutter/services.dart' show rootBundle;
@@ -19,29 +20,30 @@ class GachaService {
   List<Monster> _allMonsters = []; // 全てのモンスターを保持
   List<Stage> _allStages = []; // 全てのステージを保持
 
+  // ★追加または確認：_allMonstersへの公開ゲッター★
+  List<Monster> get allMonsters => _allMonsters;
+
   double _totalWeight = 0.0; // ガチャプールの合計重み
 
   Future<void> loadGachaPool() async {
     try {
-      // ★ ここを修正: 正しいパスを指定 ★
       final String response = await rootBundle.loadString('assets/data/gacha_pool.json');
-      print('gacha_pool.json content loaded. Length: ${response.length}'); // コンテンツ長をログに出力
+      print('gacha_pool.json content loaded. Length: ${response.length}');
       final List<dynamic> data = json.decode(response);
 
       _gachaPool = data.map((json) => GachaItem.fromJson(json)).toList();
       _totalWeight = _gachaPool.fold(0.0, (sum, item) => sum + item.weight);
       print('Gacha pool loaded successfully: ${_gachaPool.length} items, Total weight: $_totalWeight');
-    } catch (e, stacktrace) { // ★stacktraceを追加して詳細なエラー情報を取得★
+    } catch (e, stacktrace) {
       print('Error loading gacha_pool.json: $e');
-      print('Stacktrace: $stacktrace'); // スタックトレースも出力
-      _gachaPool = []; // ロード失敗時はガチャプールを空にする
+      print('Stacktrace: $stacktrace');
+      _gachaPool = [];
       _totalWeight = 0.0;
     }
   }
 
   Future<void> loadMonsters() async {
     try {
-      // ★ ここを修正: 正しいパスを指定 ★
       final String response = await rootBundle.loadString('assets/data/monsters.json');
       final List<dynamic> data = json.decode(response);
       _allMonsters = data.map((json) => Monster.fromJson(json)).toList();
@@ -55,7 +57,6 @@ class GachaService {
 
   Future<void> loadStages() async {
     try {
-      // ★ ここを修正: 正しいパスを指定 ★
       final String response = await rootBundle.loadString('assets/data/stages.json');
       final List<dynamic> data = json.decode(response);
       _allStages = data.map((json) => Stage.fromJson(json)).toList();
@@ -72,7 +73,6 @@ class GachaService {
   }
 
   Monster generateEnemyMonsterForStage(String stageId) {
-    // Stageが見つからない場合のフォールバックを強化
     final stage = _allStages.firstWhere(
           (s) => s.id == stageId,
       orElse: () {
@@ -81,7 +81,7 @@ class GachaService {
           id: 'default_stage',
           name: 'デフォルトステージ',
           description: 'ステージデータが見つかりませんでした。',
-          enemyMonsterIds: _allMonsters.isNotEmpty ? [_allMonsters.first.id] : [], // 少なくとも1体モンスターがいればそのIDを使う
+          enemyMonsterIds: _allMonsters.isNotEmpty ? [_allMonsters.first.id] : [],
           baseExpAwarded: 5,
           minEnemyLevel: 1,
           maxEnemyLevel: 1,
@@ -90,42 +90,36 @@ class GachaService {
     );
 
     final random = Random();
-    // enemyMonsterIdsが空の場合のハンドリング
     if (stage.enemyMonsterIds.isEmpty) {
       print('Error: Stage ${stage.id} has no enemyMonsterIds. Cannot generate enemy.');
-      // モンスターが1体もロードされていない場合、nullを返すか、エラーを投げるか、デフォルトモンスターを生成する
       if (_allMonsters.isNotEmpty) {
-        return _allMonsters.first; // ロード済みの最初のモンスターを返す
+        return _allMonsters.first;
       }
       throw Exception('No enemy monster IDs defined for stage and no monsters loaded to fallback.');
     }
 
     final enemyMonsterId = stage.enemyMonsterIds[random.nextInt(stage.enemyMonsterIds.length)];
 
-    // baseEnemyが見つからない場合のフォールバックを強化
     final baseEnemy = _allMonsters.firstWhere(
           (m) => m.id == enemyMonsterId,
       orElse: () {
         print('Warning: Enemy monster with ID $enemyMonsterId not found. Using default monster.');
         if (_allMonsters.isNotEmpty) {
-          return _allMonsters.first; // ロード済みの最初のモンスターをフォールバックとして使う
+          return _allMonsters.first;
         }
-        // ここに到達することは滅多にないはずだが、念のため
         return Monster(
           id: 'default_monster',
           name: '不明なモンスター',
           attribute: MonsterAttribute.none,
-          imageUrl: 'assets/images/monsters/default_monster.png', // デフォルト画像パスも設定
+          imageUrl: 'assets/images/monsters/default_monster.png',
           maxHp: 50, attack: 10, defense: 5, speed: 5,
-          currentExp: 0, level: 1,
+          currentExp: 0, level: 1, currentHp: 50, // currentHp も設定
         );
       },
     );
 
-    // 敵モンスターのレベルをステージに基づいて調整する
     final int enemyLevel = stage.minEnemyLevel + random.nextInt(stage.maxEnemyLevel - stage.minEnemyLevel + 1);
 
-    // ベースモンスターのコピーを作成し、レベルに応じてステータスを調整
     return Monster(
       id: baseEnemy.id,
       name: baseEnemy.name,
@@ -138,7 +132,6 @@ class GachaService {
       defense: (baseEnemy.defense * (1 + (enemyLevel - 1) * 0.05)).toInt(),
       speed: (baseEnemy.speed * (1 + (enemyLevel - 1) * 0.05)).toInt(),
       currentExp: 0,
-
     );
   }
 
@@ -166,7 +159,6 @@ class GachaService {
       }
     }
 
-    // fallback (理論上ここには到達しないはずだが、念のため)
     print('Warning: Random number did not fall within any weight range. Returning first gacha item as fallback.');
     return _gachaPool.first;
   }

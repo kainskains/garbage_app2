@@ -1,28 +1,29 @@
 [
   {
+    "id": "exp_orb_small_gacha",
     "name": "経験値玉(小)",
+    "type": "item",
     "imageUrl": "assets/images/items/exp_orb_small.png",
-    "isMonster": false,
-    "ticketAmount": 0,
     "weight": 50.0
   },
   {
+    "id": "bingo_ball_gacha",
     "name": "ビンゴ玉",
+    "type": "item",
     "imageUrl": "assets/images/items/bingo_ball.png",
-    "isMonster": false,
-    "ticketAmount": 0,
     "weight": 30.0
   },
   {
+    "id": "coin_100_gacha",
     "name": "コイン100枚",
+    "type": "item",
     "imageUrl": "assets/images/items/coin.png",
-    "isMonster": false,
-    "ticketAmount": 0,
     "weight": 15.0
   },
   {
+    "id": "gacha_ticket_5",
     "name": "ガチャチケット x5",
-    "isMonster": false,
+    "type": "ticket",
     "ticketAmount": 5,
     "weight": 5.0
   }
