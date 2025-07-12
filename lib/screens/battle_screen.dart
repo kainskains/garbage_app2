@@ -1,5 +1,3 @@
-// lib/screens/battle_screen.dart (修正後の全体コード)
-
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:garbage_app/services/gacha_service.dart';
@@ -282,7 +280,25 @@ class _BattleScreenState extends State<BattleScreen> {
                 ),
                 const SizedBox(height: 30),
 
+                // ★ここからプレイヤーモンスターの画像表示を追加★
+                Text(
+                  'あなた: ${widget.playerMonster.name} (Lv.${widget.playerMonster.level})',
+                  style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold, color: Colors.blue),
+                ),
+                const SizedBox(height: 10),
+                Image.asset(
+                  widget.playerMonster.imageUrl,
+                  width: 150,
+                  height: 150,
+                  fit: BoxFit.contain,
+                  errorBuilder: (context, error, stackTrace) {
+                    return const Icon(Icons.error, size: 100, color: Colors.red);
+                  },
+                ),
+                const SizedBox(height: 10),
                 _buildHpBar(widget.playerMonster),
+                // ★ここまでプレイヤーモンスターの画像表示を追加★
+
                 const SizedBox(height: 30),
 
                 if (_isBattleInProgress)

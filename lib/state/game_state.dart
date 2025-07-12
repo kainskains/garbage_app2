@@ -8,10 +8,20 @@ class GameState extends ChangeNotifier {
   int _gold = 0; // ★ゴールドを追加★
   int _gachaTickets = 0; // ★ガチャチケットを追加★
 
-  List<Monster> get monsters => _monsters;
+  List<Monster> get monsters => _monsters; // 入手順のリストとしてそのまま利用
   List<GachaItem> get inventory => _inventory; // ★インベントリのゲッター★
   int get gold => _gold; // ★ゴールドのゲッター★
   int get gachaTickets => _gachaTickets; // ★ガチャチケットのゲッター★
+
+  // モンスター属性の並び順を定義
+  final Map<MonsterAttribute, int> _attributeSortOrder = {
+    MonsterAttribute.fire: 0,
+    MonsterAttribute.water: 1,
+    MonsterAttribute.wood: 2,
+    MonsterAttribute.light: 3,
+    MonsterAttribute.dark: 4,
+    MonsterAttribute.none: 5, // ノーマル属性を最後にする
+  };
 
   // 初期化（ダミーデータなど）
   GameState() {
@@ -19,8 +29,8 @@ class GameState extends ChangeNotifier {
     _monsters.add(
       Monster(
         id: 'player_monster_1',
-        name: '初期モンスター',
-        attribute: MonsterAttribute.none,
+        name: 'YOU',
+        attribute: MonsterAttribute.fire,
         imageUrl: 'assets/images/monsters/monster_rare_a.png',
         maxHp: 100,
         attack: 10,
@@ -29,9 +39,11 @@ class GameState extends ChangeNotifier {
         level: 1,
         currentExp: 0,
         currentHp: 100,
-        description: 'あなたの最初の相棒。',
+        description: '冒険の始まり。',
       ),
     );
+
+
 
     // 初期ガチャチケット
     _gachaTickets = 5; // 例: 5枚からスタート
@@ -102,7 +114,6 @@ class GameState extends ChangeNotifier {
     }
   }
 
-
   // バトル勝利時などに経験値を獲得する既存のメソッド
   void gainExpToMonster(String monsterId, int exp) {
     final monsterIndex = _monsters.indexWhere((m) => m.id == monsterId);
@@ -134,6 +145,31 @@ class GameState extends ChangeNotifier {
       _gachaTickets = 0; // Ensure tickets don't go below zero
     }
     notifyListeners();
+  }
+
+  // ★新しいゲッター: 属性でソートされたモンスターリストを返す★
+  List<Monster> get sortedMonstersByAttribute {
+    List<Monster> sortedList = List.from(_monsters); // 元のリストを変更しないようにコピーを作成
+    sortedList.sort((a, b) {
+      int orderA = _attributeSortOrder[a.attribute] ?? 99; // 未知の属性は最後に
+      int orderB = _attributeSortOrder[b.attribute] ?? 99; // 未知の属性は最後に
+      return orderA.compareTo(orderB);
+    });
+    return sortedList;
+  }
+
+  // ★新しいゲッター: レベル昇順でソートされたモンスターリストを返す★
+  List<Monster> get sortedMonstersByLevelAsc {
+    List<Monster> sortedList = List.from(_monsters);
+    sortedList.sort((a, b) => a.level.compareTo(b.level));
+    return sortedList;
+  }
+
+  // ★新しいゲッター: レベル降順でソートされたモンスターリストを返す★
+  List<Monster> get sortedMonstersByLevelDesc {
+    List<Monster> sortedList = List.from(_monsters);
+    sortedList.sort((a, b) => b.level.compareTo(a.level)); // 降順なのでbとaを逆にする
+    return sortedList;
   }
 
   Monster? _selectedPlayerMonster;

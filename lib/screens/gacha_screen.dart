@@ -142,85 +142,125 @@ class _GachaScreenState extends State<GachaScreen> {
         title: const Text('ガチャ'),
         backgroundColor: Colors.blueAccent,
       ),
-      body: Consumer<GameState>(
-        builder: (context, gameState, child) {
-          return Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16.0),
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Text(
-                    '現在のチケット: ${gameState.gachaTickets}枚',
-                    style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 30),
-                  ElevatedButton(
-                    onPressed: gameState.gachaTickets > 0 ? _pullGacha : null,
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
-                      textStyle: const TextStyle(fontSize: 20),
-                      backgroundColor: Colors.green,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+      body: Stack( // 背景画像のためにStackを追加
+        children: [
+          // 背景画像
+          Positioned.fill(
+            child: Image.asset(
+              'assets/images/items/treasure_box.png', // 仮の背景画像パス
+              fit: BoxFit.cover,
+              errorBuilder: (context, error, stackTrace) {
+                return Container(color: Colors.blueGrey[100]); // エラー時の代替色
+              },
+            ),
+          ),
+          // その他のコンテンツ
+          Consumer<GameState>(
+            builder: (context, gameState, child) {
+              return Center(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      // 現在のチケット表示
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                        decoration: BoxDecoration(
+                          color: Colors.white.withOpacity(0.7), // 半透明の背景
+                          borderRadius: BorderRadius.circular(8),
+                          border: Border.all(color: Colors.grey.shade300),
+                        ),
+                        child: Text(
+                          '現在のチケット: ${gameState.gachaTickets}枚',
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.black), // 文字色を黒に
+                        ),
                       ),
-                      elevation: 5,
-                    ),
-                    child: _isPulling
-                        ? const CircularProgressIndicator(color: Colors.white)
-                        : const Text('ガチャを引く'),
-                  ),
-                  const SizedBox(height: 30),
-                  if (_gachaResult != null) ...[
-                    Text(
-                      '結果: ${_gachaResult!.name}',
-                      style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold),
-                    ),
-                    const SizedBox(height: 20),
-                    // Image.network から Image.asset に変更
-                    Image.asset(
-                      _gachaResult!.imageUrl ?? 'assets/images/placeholder.png', // Fallbackをアセットパスに変更
-                      width: 150,
-                      height: 150,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) {
-                        return Container(
+                      const SizedBox(height: 30),
+                      ElevatedButton(
+                        onPressed: gameState.gachaTickets > 0 ? _pullGacha : null,
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 40, vertical: 20),
+                          textStyle: const TextStyle(fontSize: 20),
+                          backgroundColor: Colors.green,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                          elevation: 5,
+                        ),
+                        child: _isPulling
+                            ? const CircularProgressIndicator(color: Colors.white)
+                            : const Text('ガチャを引く'),
+                      ),
+                      const SizedBox(height: 30),
+                      if (_gachaResult != null) ...[
+                        // 結果表示
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.7), // 半透明の背景
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Text(
+                            '結果: ${_gachaResult!.name}',
+                            style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.black), // 文字色を黒に
+                          ),
+                        ),
+                        const SizedBox(height: 20),
+                        Image.asset(
+                          _gachaResult!.imageUrl ?? 'assets/images/placeholder.png', // Fallbackをアセットパスに変更
                           width: 150,
                           height: 150,
-                          color: Colors.grey,
-                          child: const Icon(Icons.broken_image, color: Colors.white),
-                        );
-                      },
-                    ),
-                    const SizedBox(height: 10),
-                    Text(
-                      _gachaResult!.description ?? '説明なし', // Use null-aware operator
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
-                  const Spacer(),
-                  ElevatedButton(
-                    onPressed: () {
-                      Navigator.pop(context);
-                    },
-                    style: ElevatedButton.styleFrom(
-                      padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
-                      textStyle: const TextStyle(fontSize: 18),
-                      backgroundColor: Colors.redAccent,
-                      foregroundColor: Colors.white,
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(10),
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 150,
+                              height: 150,
+                              color: Colors.grey,
+                              child: const Icon(Icons.broken_image, color: Colors.white),
+                            );
+                          },
+                        ),
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withOpacity(0.7), // 半透明の背景
+                            borderRadius: BorderRadius.circular(8),
+                            border: Border.all(color: Colors.grey.shade300),
+                          ),
+                          child: Text(
+                            _gachaResult!.description ?? '説明なし', // Use null-aware operator
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 16, color: Colors.black87), // 文字色を黒に
+                          ),
+                        ),
+                      ],
+                      const Spacer(),
+                      ElevatedButton(
+                        onPressed: () {
+                          Navigator.pop(context);
+                        },
+                        style: ElevatedButton.styleFrom(
+                          padding: const EdgeInsets.symmetric(horizontal: 30, vertical: 15),
+                          textStyle: const TextStyle(fontSize: 18),
+                          backgroundColor: Colors.redAccent,
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(10),
+                          ),
+                        ),
+                        child: const Text('戻る'),
                       ),
-                    ),
-                    child: const Text('戻る'),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          );
-        },
+                ),
+              );
+            },
+          ),
+        ],
       ),
     );
   }
