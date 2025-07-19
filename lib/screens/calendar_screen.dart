@@ -24,7 +24,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     Weekday.friday: DateTime.friday,
     Weekday.saturday: DateTime.saturday,
     Weekday.sunday: DateTime.sunday,
-    Weekday.none: -1,
+    // Weekday.none は DateTime.weekday に対応しないのでここでは不要
   };
 
   @override
@@ -82,7 +82,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                       return Positioned(
                         right: 1,
                         bottom: 1,
-                        // ゴミのタイプごとに色付きのマーカーを表示
                         child: Row(
                           children: dayGarbageTypes.map((type) => _buildGarbageTypeMarker(settingsProvider.getGarbageTypeColor(type))).toList(),
                         ),
@@ -111,37 +110,48 @@ class _CalendarScreenState extends State<CalendarScreen> {
     }
 
     settingsProvider.settings.forEach((type, rule) {
-      if (rule.frequency == CollectionFrequency.none || rule.weekday == Weekday.none) {
-        return; // このルールはスキップ
+      // ルールが未設定（頻度も曜日もnone）の場合はスキップ
+      if (rule.frequencies.isEmpty && rule.weekday == Weekday.none) {
+        return;
+      }
+      // 頻度が設定されていない、または曜日が未設定の場合はスキップ (部分的な設定ミス防止)
+      if (rule.frequencies.isEmpty || rule.weekday == Weekday.none) {
+        return;
       }
 
+      // 1. 設定された曜日とカレンダーの日の曜日が一致するか確認
       if (_weekdayToDateTimeConstant[rule.weekday] == day.weekday) {
-        final firstDayOfMonth = DateTime(day.year, day.month, 1);
-        final startOfFirstWeek = firstDayOfMonth.subtract(Duration(days: firstDayOfMonth.weekday - DateTime.monday));
-        final daysSinceFirstWeekStart = day.difference(startOfFirstWeek).inDays;
-        final int weekOfMonth = (daysSinceFirstWeekStart / 7).floor() + 1;
+        // 2. 曜日が一致した場合、さらに頻度をチェック
+
+        // 月の1日を基準にした「第N週目」の計算
+        // (日 - 1) を 7 で割って切り捨て、1を足すことで、
+        // 1-7日を第1週、8-14日を第2週...とする
+        final int weekOfMonth = ((day.day - 1) / 7).floor() + 1;
 
         bool matchesFrequency = false;
-        switch (rule.frequency) {
-          case CollectionFrequency.weekly:
+        // 毎週設定が含まれている場合、他の第X週目の設定は無視して常にtrue
+        if (rule.frequencies.contains(CollectionFrequency.weekly)) {
+          matchesFrequency = true;
+        } else {
+          // 個別の第X週目設定が含まれている場合、現在の日がその週に該当するかチェック
+          if (rule.frequencies.contains(CollectionFrequency.firstWeek) && weekOfMonth == 1) {
             matchesFrequency = true;
-            break;
-          case CollectionFrequency.firstWeek:
-            matchesFrequency = (weekOfMonth == 1);
-            break;
-          case CollectionFrequency.secondWeek:
-            matchesFrequency = (weekOfMonth == 2);
-            break;
-          case CollectionFrequency.thirdWeek:
-            matchesFrequency = (weekOfMonth == 3);
-            break;
-          case CollectionFrequency.fourthWeek:
-            matchesFrequency = (weekOfMonth == 4);
-            break;
-          case CollectionFrequency.none:
-            matchesFrequency = false;
-            break;
+          }
+          if (rule.frequencies.contains(CollectionFrequency.secondWeek) && weekOfMonth == 2) {
+            matchesFrequency = true;
+          }
+          if (rule.frequencies.contains(CollectionFrequency.thirdWeek) && weekOfMonth == 3) {
+            matchesFrequency = true;
+          }
+          if (rule.frequencies.contains(CollectionFrequency.fourthWeek) && weekOfMonth == 4) {
+            matchesFrequency = true;
+          }
+          // 必要であれば fifthWeek もここに追加
+          // if (rule.frequencies.contains(CollectionFrequency.fifthWeek) && weekOfMonth == 5) {
+          //   matchesFrequency = true;
+          // }
         }
+
 
         if (matchesFrequency) {
           types.add(type);
@@ -159,26 +169,28 @@ class _CalendarScreenState extends State<CalendarScreen> {
         shape: BoxShape.circle,
         color: color,
       ),
-      width: 8.0,
+      width: 8.0, // 小さめのドット
       height: 8.0,
     );
   }
 
   // 選択された日のイベントを表示するウィジェット
   Widget _buildSelectedDayEvents(GarbageCollectionSettings settingsProvider, List<GarbageType> garbageTypes, DateTime day) {
-    final List<String> eventNames = garbageTypes.map((type) => settingsProvider.getGarbageTypeName(type)).toList();
+    // List<String> eventNames = garbageTypes.map((type) => settingsProvider.getGarbageTypeName(type)).toList(); // この行はもう不要、削除
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '${day.month}月${day.day}日 (${settingsProvider.getWeekdayName(
+            // Weekday.values.firstWhere(...): DateTime.weekday (int) から Weekday enum を逆引き
               Weekday.values.firstWhere((w) => _weekdayToDateTimeConstant[w] == day.weekday, orElse: () => Weekday.none)
           )}):',
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        if (eventNames.isEmpty)
+        // garbageTypes が空かどうかをチェック
+        if (garbageTypes.isEmpty)
           Center(
             child: Text(
               'この日は収集物がありません。',
@@ -186,19 +198,15 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           )
         else
-          ...eventNames.map((name) {
-            // ゴミタイプ名から元のGarbageTypeを逆引きして色を取得
-            final garbageType = settingsProvider.settings.keys.firstWhere(
-                    (element) => settingsProvider.getGarbageTypeName(element) == name,
-                orElse: () => GarbageType.other // 見つからない場合のフォールバック
-            );
+        // garbageTypes リストを直接 map して、各要素 (type: GarbageType) を使う
+          ...garbageTypes.map((type) {
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
               child: Row(
                 children: [
-                  Icon(Icons.circle, size: 10, color: settingsProvider.getGarbageTypeColor(garbageType)),
+                  Icon(Icons.circle, size: 10, color: settingsProvider.getGarbageTypeColor(type)), // type は GarbageType 型
                   const SizedBox(width: 8),
-                  Text(name, style: const TextStyle(fontSize: 16)),
+                  Text(settingsProvider.getGarbageTypeName(type), style: const TextStyle(fontSize: 16)), // type は GarbageType 型
                 ],
               ),
             );

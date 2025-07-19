@@ -14,7 +14,7 @@ enum GarbageType {
   other,      // その他
 }
 
-// 曜日を定義するEnum (これまで通り)
+// 曜日を定義するEnum
 enum Weekday {
   monday,
   tuesday,
@@ -34,23 +34,32 @@ enum CollectionFrequency {
   thirdWeek,    // 第3週目
   fourthWeek,   // 第4週目
   // 必要であれば fifthWeek なども追加
-  none,         // 未設定
+  // none は頻度選択では使わない（全体ルール未設定はCollectionRuleオブジェクト自体がない場合で判断）
 }
 
 // 個々の収集日設定のエントリを表現するクラス
 class CollectionRule {
-  CollectionFrequency frequency;
+  // ★変更点: frequency を Set<CollectionFrequency> に変更★
+  Set<CollectionFrequency> frequencies;
   Weekday weekday;
 
-  CollectionRule({this.frequency = CollectionFrequency.none, this.weekday = Weekday.none});
+  CollectionRule({required this.frequencies, this.weekday = Weekday.none});
+
+  // 初期値としての空のルール
+  CollectionRule.empty() : frequencies = <CollectionFrequency>{}, weekday = Weekday.none;
+
 
   // JSONからCollectionRuleオブジェクトを生成
   factory CollectionRule.fromJson(Map<String, dynamic> json) {
+    // frequencies を List<String> から Set<CollectionFrequency> に変換
+    final List<dynamic> freqStrings = json['frequencies'] as List<dynamic>;
+    final Set<CollectionFrequency> freqs = freqStrings.map((s) => CollectionFrequency.values.firstWhere(
+          (e) => e.toString().split('.').last == s,
+      // デフォルト値は設定しない。データがおかしい場合は空セットで。
+    )).toSet();
+
     return CollectionRule(
-      frequency: CollectionFrequency.values.firstWhere(
-            (e) => e.toString().split('.').last == json['frequency'],
-        orElse: () => CollectionFrequency.none,
-      ),
+      frequencies: freqs,
       weekday: Weekday.values.firstWhere(
             (e) => e.toString().split('.').last == json['weekday'],
         orElse: () => Weekday.none,
@@ -61,7 +70,8 @@ class CollectionRule {
   // CollectionRuleオブジェクトからJSONを生成
   Map<String, dynamic> toJson() {
     return {
-      'frequency': frequency.toString().split('.').last,
+      // Set<CollectionFrequency> を List<String> に変換して保存
+      'frequencies': frequencies.map((f) => f.toString().split('.').last).toList(),
       'weekday': weekday.toString().split('.').last,
     };
   }
@@ -71,23 +81,22 @@ class CollectionRule {
       identical(this, other) ||
           other is CollectionRule &&
               runtimeType == other.runtimeType &&
-              frequency == other.frequency &&
+              setEquals(frequencies, other.frequencies) && // Setの比較には collection パッケージの setEquals を使用
               weekday == other.weekday;
 
   @override
-  int get hashCode => frequency.hashCode ^ weekday.hashCode;
+  int get hashCode => frequencies.hashCode ^ weekday.hashCode;
 }
 
 // 収集日設定を管理するクラス
 class GarbageCollectionSettings with ChangeNotifier {
-  // 各ゴミの種類と収集ルールのマップ
   Map<GarbageType, CollectionRule> _settings = {
-    GarbageType.cardboard: CollectionRule(),
-    GarbageType.glass: CollectionRule(),
-    GarbageType.metal: CollectionRule(),
-    GarbageType.paper: CollectionRule(),
-    GarbageType.plastic: CollectionRule(),
-    GarbageType.other: CollectionRule(),
+    GarbageType.cardboard: CollectionRule.empty(), // 初期化を empty rule に変更
+    GarbageType.glass: CollectionRule.empty(),
+    GarbageType.metal: CollectionRule.empty(),
+    GarbageType.paper: CollectionRule.empty(),
+    GarbageType.plastic: CollectionRule.empty(),
+    GarbageType.other: CollectionRule.empty(),
   };
 
   Map<GarbageType, CollectionRule> get settings => _settings;
@@ -126,6 +135,23 @@ class GarbageCollectionSettings with ChangeNotifier {
     notifyListeners();
   }
 
+  // 頻度セットを更新するヘルパーメソッドを追加
+  void updateCollectionFrequencies(GarbageType type, Set<CollectionFrequency> newFrequencies) {
+    final currentRule = _settings[type] ?? CollectionRule.empty();
+    _settings[type] = CollectionRule(frequencies: newFrequencies, weekday: currentRule.weekday);
+    saveSettings();
+    notifyListeners();
+  }
+
+  // 曜日を更新するヘルパーメソッド (既存のupdateCollectionRuleと連携)
+  void updateCollectionWeekday(GarbageType type, Weekday newWeekday) {
+    final currentRule = _settings[type] ?? CollectionRule.empty();
+    _settings[type] = CollectionRule(frequencies: currentRule.frequencies, weekday: newWeekday);
+    saveSettings();
+    notifyListeners();
+  }
+
+
   String getGarbageTypeName(GarbageType type) {
     switch (type) {
       case GarbageType.cardboard: return '段ボール';
@@ -150,7 +176,8 @@ class GarbageCollectionSettings with ChangeNotifier {
     }
   }
 
-  // ★追加: 収集頻度の日本語名を取得するメソッド★
+  // 収集頻度の日本語名を取得するメソッド
+  // CollectionFrequency.none は頻度選択には使わないため、リストからは除外
   String getFrequencyName(CollectionFrequency frequency) {
     switch (frequency) {
       case CollectionFrequency.weekly: return '毎週';
@@ -158,7 +185,7 @@ class GarbageCollectionSettings with ChangeNotifier {
       case CollectionFrequency.secondWeek: return '第2週目';
       case CollectionFrequency.thirdWeek: return '第3週目';
       case CollectionFrequency.fourthWeek: return '第4週目';
-      case CollectionFrequency.none: return '未設定';
+    // case CollectionFrequency.none: return '未設定'; // ここは不要
     }
   }
 
