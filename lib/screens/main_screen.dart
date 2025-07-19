@@ -2,7 +2,8 @@
 
 import 'package:flutter/material.dart';
 import 'package:garbage_app/screens/trash_recognition_screen.dart';
-import 'package:garbage_app/screens/settings_screen.dart'; // ★追加: 設定画面をインポート★
+import 'package:garbage_app/screens/settings_screen.dart';
+import 'package:garbage_app/screens/calendar_screen.dart'; // ★追加: カレンダー画面をインポート★
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -14,14 +15,15 @@ class MainScreen extends StatefulWidget {
 class _MainScreenState extends State<MainScreen> {
   int _selectedIndex = 0; // 現在選択されているタブのインデックス
 
-  late final List<Widget> _widgetOptions; // initStateで初期化するためlate finalにする
+  late final List<Widget> _widgetOptions;
 
   @override
   void initState() {
     super.initState();
     _widgetOptions = <Widget>[
       const TrashRecognitionScreen(), // インデックス0: メインの分別機能
-      const SettingsScreen(),         // ★追加: インデックス1: 設定画面★
+      const CalendarScreen(),         // ★追加: インデックス1: カレンダー画面★
+      const SettingsScreen(),         // インデックス2: 設定画面 (インデックスが変わったので注意)
     ];
   }
 
@@ -44,11 +46,15 @@ class _MainScreenState extends State<MainScreen> {
       bottomNavigationBar: BottomNavigationBar(
         items: const <BottomNavigationBarItem>[
           BottomNavigationBarItem(
-            icon: Icon(Icons.camera_alt), // 分別機能っぽいアイコン
+            icon: Icon(Icons.camera_alt),
             label: '分別',
           ),
-          BottomNavigationBarItem( // ★追加: 設定タブ★
-            icon: Icon(Icons.settings), // 設定っぽいアイコン
+          BottomNavigationBarItem( // ★追加: カレンダータブ★
+            icon: Icon(Icons.calendar_today), // カレンダーアイコン
+            label: 'カレンダー',
+          ),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.settings),
             label: '設定',
           ),
         ],
@@ -56,7 +62,7 @@ class _MainScreenState extends State<MainScreen> {
         selectedItemColor: Colors.amber[800],
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, // アイテム数に応じてfixedかshiftingを選択
+        type: BottomNavigationBarType.fixed,
       ),
     );
   }
