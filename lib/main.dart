@@ -9,7 +9,7 @@ void main() {
     // MultiProvider を使用して複数のProviderを登録
     MultiProvider(
       providers: [
-        ChangeNotifierProvider(create: (context) => GarbageCollectionSettings()..loadSettings()), // 初期ロードも行う
+        ChangeNotifierProvider(create: (context) => GarbageCollectionSettings()), // 初期ロードも行う
       ],
       child: const MyApp(),
     ),

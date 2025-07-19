@@ -24,7 +24,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
     Weekday.friday: DateTime.friday,
     Weekday.saturday: DateTime.saturday,
     Weekday.sunday: DateTime.sunday,
-    // Weekday.none は DateTime.weekday に対応しないのでここでは不要
   };
 
   @override
@@ -38,7 +37,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final settingsProvider = Provider.of<GarbageCollectionSettings>(context);
 
     // 選択された日のイベントを計算
-    final List<GarbageType> selectedDayGarbageTypes = _getGarbageTypesForDay(settingsProvider, _selectedDay ?? _focusedDay);
+    // ★変更済み: 戻り値をMapEntry<GarbageType, String?>に★
+    final List<MapEntry<GarbageType, String?>> selectedDayGarbageInfo = _getGarbageInfoForDay(settingsProvider, _selectedDay ?? _focusedDay);
 
     return Scaffold(
       appBar: AppBar(
@@ -77,13 +77,14 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 },
                 calendarBuilders: CalendarBuilders(
                   markerBuilder: (context, day, events) {
-                    final List<GarbageType> dayGarbageTypes = _getGarbageTypesForDay(settingsProvider, day);
-                    if (dayGarbageTypes.isNotEmpty) {
+                    // ★変更済み: 戻り値をMapEntry<GarbageType, String?>に★
+                    final List<MapEntry<GarbageType, String?>> dayGarbageInfo = _getGarbageInfoForDay(settingsProvider, day);
+                    if (dayGarbageInfo.isNotEmpty) {
                       return Positioned(
                         right: 1,
                         bottom: 1,
                         child: Row(
-                          children: dayGarbageTypes.map((type) => _buildGarbageTypeMarker(settingsProvider.getGarbageTypeColor(type))).toList(),
+                          children: dayGarbageInfo.map((entry) => _buildGarbageTypeMarker(settingsProvider.getGarbageTypeColor(entry.key))).toList(),
                         ),
                       );
                     }
@@ -93,7 +94,8 @@ class _CalendarScreenState extends State<CalendarScreen> {
               ),
               const SizedBox(height: 20),
               // 選択された日の詳細表示
-              _buildSelectedDayEvents(settingsProvider, selectedDayGarbageTypes, _selectedDay ?? _focusedDay),
+              // ★変更済み: 引数をMapEntry<GarbageType, String?>に★
+              _buildSelectedDayEvents(settingsProvider, selectedDayGarbageInfo, _selectedDay ?? _focusedDay),
             ],
           ),
         ),
@@ -101,39 +103,40 @@ class _CalendarScreenState extends State<CalendarScreen> {
     );
   }
 
-  // 特定の日のゴミタイプを取得するヘルパーメソッド
-  List<GarbageType> _getGarbageTypesForDay(GarbageCollectionSettings settingsProvider, DateTime day) {
-    List<GarbageType> types = [];
+  // 特定の日のゴミタイプと時間を取得するヘルパーメソッド
+  // ★変更済み: 戻り値をMapEntry<GarbageType, String?>に★
+  List<MapEntry<GarbageType, String?>> _getGarbageInfoForDay(GarbageCollectionSettings settingsProvider, DateTime day) {
+    List<MapEntry<GarbageType, String?>> info = [];
 
     if (day == null) {
-      return types;
+      return info;
     }
 
     settingsProvider.settings.forEach((type, rule) {
-      // ルールが未設定（頻度も曜日もnone）の場合はスキップ
-      if (rule.frequencies.isEmpty && rule.weekday == Weekday.none) {
+      // ルールが未設定（頻度も曜日も空のSet）の場合はスキップ
+      if (rule.frequencies.isEmpty && rule.weekdays.isEmpty) {
         return;
       }
       // 頻度が設定されていない、または曜日が未設定の場合はスキップ (部分的な設定ミス防止)
-      if (rule.frequencies.isEmpty || rule.weekday == Weekday.none) {
+      if (rule.frequencies.isEmpty || rule.weekdays.isEmpty) {
         return;
       }
 
       // 1. 設定された曜日とカレンダーの日の曜日が一致するか確認
-      if (_weekdayToDateTimeConstant[rule.weekday] == day.weekday) {
+      final currentDayWeekday = Weekday.values.firstWhere(
+            (w) => _weekdayToDateTimeConstant[w] == day.weekday,
+        orElse: () => Weekday.none,
+      );
+
+      if (rule.weekdays.contains(currentDayWeekday)) {
         // 2. 曜日が一致した場合、さらに頻度をチェック
 
-        // 月の1日を基準にした「第N週目」の計算
-        // (日 - 1) を 7 で割って切り捨て、1を足すことで、
-        // 1-7日を第1週、8-14日を第2週...とする
         final int weekOfMonth = ((day.day - 1) / 7).floor() + 1;
 
         bool matchesFrequency = false;
-        // 毎週設定が含まれている場合、他の第X週目の設定は無視して常にtrue
         if (rule.frequencies.contains(CollectionFrequency.weekly)) {
           matchesFrequency = true;
         } else {
-          // 個別の第X週目設定が含まれている場合、現在の日がその週に該当するかチェック
           if (rule.frequencies.contains(CollectionFrequency.firstWeek) && weekOfMonth == 1) {
             matchesFrequency = true;
           }
@@ -146,18 +149,17 @@ class _CalendarScreenState extends State<CalendarScreen> {
           if (rule.frequencies.contains(CollectionFrequency.fourthWeek) && weekOfMonth == 4) {
             matchesFrequency = true;
           }
-          if (rule.frequencies.contains(CollectionFrequency.fifthWeek) && weekOfMonth == 5) { // ★第5週目ロジック追加★
+          if (rule.frequencies.contains(CollectionFrequency.fifthWeek) && weekOfMonth == 5) {
             matchesFrequency = true;
           }
         }
 
-
         if (matchesFrequency) {
-          types.add(type);
+          info.add(MapEntry(type, rule.timeOfDay)); // ★変更済み: type と timeOfDay を MapEntry で追加 ★
         }
       }
     });
-    return types;
+    return info;
   }
 
   // ゴミの種類ごとの色付きマーカー
@@ -174,20 +176,20 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   // 選択された日のイベントを表示するウィジェット
-  Widget _buildSelectedDayEvents(GarbageCollectionSettings settingsProvider, List<GarbageType> garbageTypes, DateTime day) {
+  // ★変更済み: 引数をList<MapEntry<GarbageType, String?>>に★
+  Widget _buildSelectedDayEvents(GarbageCollectionSettings settingsProvider, List<MapEntry<GarbageType, String?>> garbageInfo, DateTime day) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Text(
           '${day.month}月${day.day}日 (${settingsProvider.getWeekdayName(
-            // Weekday.values.firstWhere(...): DateTime.weekday (int) から Weekday enum を逆引き
               Weekday.values.firstWhere((w) => _weekdayToDateTimeConstant[w] == day.weekday, orElse: () => Weekday.none)
           )}):',
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        // garbageTypes が空かどうかをチェック
-        if (garbageTypes.isEmpty)
+        // garbageInfo が空かどうかをチェック
+        if (garbageInfo.isEmpty)
           Center(
             child: Text(
               'この日は収集物がありません。',
@@ -195,15 +197,21 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           )
         else
-        // garbageTypes リストを直接 map して、各要素 (type: GarbageType) を使う
-          ...garbageTypes.map((type) {
+        // garbageInfo リストを直接 map して、各要素 (entry: MapEntry<GarbageType, String?>) を使う
+          ...garbageInfo.map((entry) {
+            final GarbageType type = entry.key;
+            final String? time = entry.value; // 時間を取得
+
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
               child: Row(
                 children: [
-                  Icon(Icons.circle, size: 10, color: settingsProvider.getGarbageTypeColor(type)), // type は GarbageType 型
+                  Icon(Icons.circle, size: 10, color: settingsProvider.getGarbageTypeColor(type)),
                   const SizedBox(width: 8),
-                  Text(settingsProvider.getGarbageTypeName(type), style: const TextStyle(fontSize: 16)), // type は GarbageType 型
+                  Text(
+                    '${settingsProvider.getGarbageTypeName(type)} ${time != null ? '($time)' : ''}', // ★変更済み: 時間を表示 ★
+                    style: const TextStyle(fontSize: 16),
+                  ),
                 ],
               ),
             );
