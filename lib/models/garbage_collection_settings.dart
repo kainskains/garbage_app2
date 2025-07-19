@@ -1,7 +1,8 @@
 // lib/models/garbage_collection_settings.dart
 import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:convert'; // JSONエンコード/デコード用
+import 'dart:convert';
+import 'package:flutter/material.dart';
 
 // ゴミの種類を定義するEnum
 enum GarbageType {
@@ -13,7 +14,7 @@ enum GarbageType {
   other,      // その他
 }
 
-// 曜日を定義するEnum (FlutterのMaterial.dartにもDayOfWeekがあるが、シンプルに定義)
+// 曜日を定義するEnum (これまで通り)
 enum Weekday {
   monday,
   tuesday,
@@ -25,21 +26,72 @@ enum Weekday {
   none, // 設定なしの場合
 }
 
+// 収集頻度を定義するEnum
+enum CollectionFrequency {
+  weekly,       // 毎週
+  firstWeek,    // 第1週目
+  secondWeek,   // 第2週目
+  thirdWeek,    // 第3週目
+  fourthWeek,   // 第4週目
+  // 必要であれば fifthWeek なども追加
+  none,         // 未設定
+}
+
+// 個々の収集日設定のエントリを表現するクラス
+class CollectionRule {
+  CollectionFrequency frequency;
+  Weekday weekday;
+
+  CollectionRule({this.frequency = CollectionFrequency.none, this.weekday = Weekday.none});
+
+  // JSONからCollectionRuleオブジェクトを生成
+  factory CollectionRule.fromJson(Map<String, dynamic> json) {
+    return CollectionRule(
+      frequency: CollectionFrequency.values.firstWhere(
+            (e) => e.toString().split('.').last == json['frequency'],
+        orElse: () => CollectionFrequency.none,
+      ),
+      weekday: Weekday.values.firstWhere(
+            (e) => e.toString().split('.').last == json['weekday'],
+        orElse: () => Weekday.none,
+      ),
+    );
+  }
+
+  // CollectionRuleオブジェクトからJSONを生成
+  Map<String, dynamic> toJson() {
+    return {
+      'frequency': frequency.toString().split('.').last,
+      'weekday': weekday.toString().split('.').last,
+    };
+  }
+
+  @override
+  bool operator ==(Object other) =>
+      identical(this, other) ||
+          other is CollectionRule &&
+              runtimeType == other.runtimeType &&
+              frequency == other.frequency &&
+              weekday == other.weekday;
+
+  @override
+  int get hashCode => frequency.hashCode ^ weekday.hashCode;
+}
+
 // 収集日設定を管理するクラス
 class GarbageCollectionSettings with ChangeNotifier {
-  // 各ゴミの種類と収集曜日のマップ
-  Map<GarbageType, Weekday> _settings = {
-    GarbageType.cardboard: Weekday.none,
-    GarbageType.glass: Weekday.none,
-    GarbageType.metal: Weekday.none,
-    GarbageType.paper: Weekday.none,
-    GarbageType.plastic: Weekday.none,
-    GarbageType.other: Weekday.none,
+  // 各ゴミの種類と収集ルールのマップ
+  Map<GarbageType, CollectionRule> _settings = {
+    GarbageType.cardboard: CollectionRule(),
+    GarbageType.glass: CollectionRule(),
+    GarbageType.metal: CollectionRule(),
+    GarbageType.paper: CollectionRule(),
+    GarbageType.plastic: CollectionRule(),
+    GarbageType.other: CollectionRule(),
   };
 
-  Map<GarbageType, Weekday> get settings => _settings;
+  Map<GarbageType, CollectionRule> get settings => _settings;
 
-  // 設定を読み込む
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
     final String? settingsJson = prefs.getString('garbageCollectionSettings');
@@ -49,33 +101,31 @@ class GarbageCollectionSettings with ChangeNotifier {
       _settings = decodedJson.map((key, value) {
         return MapEntry(
           GarbageType.values.firstWhere((e) => e.toString().split('.').last == key),
-          Weekday.values.firstWhere((e) => e.toString().split('.').last == value),
+          CollectionRule.fromJson(value), // CollectionRuleとしてデコード
         );
       });
     }
     notifyListeners();
   }
 
-  // 設定を保存する
   Future<void> saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final Map<String, String> encodedMap = _settings.map((key, value) {
+    final Map<String, dynamic> encodedMap = _settings.map((key, value) {
       return MapEntry(
-        key.toString().split('.').last, // Enum名を文字列に変換
-        value.toString().split('.').last, // Enum名を文字列に変換
+        key.toString().split('.').last,
+        value.toJson(), // CollectionRuleをJSONにエンコード
       );
     });
     await prefs.setString('garbageCollectionSettings', json.encode(encodedMap));
   }
 
-  // 特定のゴミの収集日を更新する
-  void updateCollectionDay(GarbageType type, Weekday day) {
-    _settings[type] = day;
-    saveSettings(); // 変更を即座に保存
-    notifyListeners(); // UIを更新
+  // 特定のゴミの収集日ルールを更新する
+  void updateCollectionRule(GarbageType type, CollectionRule rule) {
+    _settings[type] = rule;
+    saveSettings();
+    notifyListeners();
   }
 
-  // 日本語のゴミタイプ名を取得
   String getGarbageTypeName(GarbageType type) {
     switch (type) {
       case GarbageType.cardboard: return '段ボール';
@@ -87,7 +137,6 @@ class GarbageCollectionSettings with ChangeNotifier {
     }
   }
 
-  // 日本語の曜日名を取得
   String getWeekdayName(Weekday day) {
     switch (day) {
       case Weekday.monday: return '月曜日';
@@ -98,6 +147,29 @@ class GarbageCollectionSettings with ChangeNotifier {
       case Weekday.saturday: return '土曜日';
       case Weekday.sunday: return '日曜日';
       case Weekday.none: return '未設定';
+    }
+  }
+
+  // ★追加: 収集頻度の日本語名を取得するメソッド★
+  String getFrequencyName(CollectionFrequency frequency) {
+    switch (frequency) {
+      case CollectionFrequency.weekly: return '毎週';
+      case CollectionFrequency.firstWeek: return '第1週目';
+      case CollectionFrequency.secondWeek: return '第2週目';
+      case CollectionFrequency.thirdWeek: return '第3週目';
+      case CollectionFrequency.fourthWeek: return '第4週目';
+      case CollectionFrequency.none: return '未設定';
+    }
+  }
+
+  Color getGarbageTypeColor(GarbageType type) {
+    switch (type) {
+      case GarbageType.cardboard: return Colors.brown;
+      case GarbageType.glass: return Colors.lightBlue;
+      case GarbageType.metal: return Colors.grey;
+      case GarbageType.paper: return Colors.yellow[700]!;
+      case GarbageType.plastic: return Colors.green;
+      case GarbageType.other: return Colors.deepPurple;
     }
   }
 }
