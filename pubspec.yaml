@@ -33,9 +33,3 @@ flutter:
   assets:
     - assets/garbage_model.tflite
     - assets/labels.txt
-    # ★ここを修正★
-    - assets/data/gacha_pool.json  # 個別のJSONファイルを指定
-    - assets/data/monsters.json   # 個別のJSONファイルを指定
-    - assets/data/stages.json     # 個別のJSONファイルを指定
-    - assets/images/items/        # アイテム画像フォルダを指定（サブフォルダ内のファイルも含む）
-    - assets/images/monsters/     # モンスター画像フォルダを指定（サブフォルダ内のファイルも含む）
