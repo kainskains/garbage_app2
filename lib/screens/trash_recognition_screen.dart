@@ -7,10 +7,10 @@ import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:typed_data';
 import 'dart:math' as math;
-import 'package:provider/provider.dart';
-import 'package:garbage_app/state/game_state.dart';
-import 'package:garbage_app/services/gacha_service.dart';
-import 'package:garbage_app/models/monster.dart';
+// import 'package:provider/provider.dart'; // GameStateを使用しないため不要
+// import 'package:garbage_app/state/game_state.dart'; // GameStateは削除済みなので不要
+// import 'package:garbage_app/services/gacha_service.dart'; // ガチャ機能削除のため不要
+// import 'package:garbage_app/models/monster.dart'; // モンスター関連機能削除のため不要
 
 class TrashRecognitionScreen extends StatefulWidget {
   const TrashRecognitionScreen({super.key});
@@ -32,7 +32,7 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
 
   TensorType _expectedInputType = TensorType.float32;
 
-  final GachaService _gachaService = GachaService();
+  // final GachaService _gachaService = GachaService(); // ガチャ機能削除のため不要
 
   @override
   void initState() {
@@ -108,22 +108,23 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
     return inputBytes;
   }
 
-  String _getAttributeJapaneseName(MonsterAttribute attribute) {
-    switch (attribute) {
-      case MonsterAttribute.fire:
-        return '火属性';
-      case MonsterAttribute.water:
-        return '水属性';
-      case MonsterAttribute.wood:
-        return '木属性';
-      case MonsterAttribute.light:
-        return '光属性';
-      case MonsterAttribute.dark:
-        return '闇属性';
-      case MonsterAttribute.none:
-        return 'なし';
-    }
-  }
+  // MonsterAttributeはゲーム要素なので、このメソッドは不要になる
+  // String _getAttributeJapaneseName(MonsterAttribute attribute) {
+  //   switch (attribute) {
+  //     case MonsterAttribute.fire:
+  //       return '火属性';
+  //     case MonsterAttribute.water:
+  //       return '水属性';
+  //     case MonsterAttribute.wood:
+  //       return '木属性';
+  //     case MonsterAttribute.light:
+  //       return '光属性';
+  //     case MonsterAttribute.dark:
+  //       return '闇属性';
+  //     case MonsterAttribute.none:
+  //       return 'なし';
+  //   }
+  // }
 
 
   Future<void> _runInference(File imageFile) async {
@@ -206,45 +207,50 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
         predictedLabel = _labels![predictedIndex];
         resultText = '分類結果: $predictedLabel (信頼度: ${(maxProbability * 100).toStringAsFixed(2)}%)';
 
-        final gameState = Provider.of<GameState>(context, listen: false);
-        int ticketsToAward = 0;
-        Monster? awardedMonster;
+        // ★★★ここからゲーム要素に関連するコードを削除または修正★★★
+        // final gameState = Provider.of<GameState>(context, listen: false);
+        // int ticketsToAward = 0;
+        // Monster? awardedMonster;
 
-        if (predictedLabel.contains('その他')) {
-          ticketsToAward = 1;
-        } else {
-          switch (predictedLabel) {
-            case '段ボール':
-              awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.fire);
-              break;
-            case 'プラスチック':
-              awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.water);
-              break;
-            case '紙':
-              awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.wood);
-              break;
-            case 'ガラス':
-              awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.light);
-              break;
-            case '金属':
-              awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.dark);
-              break;
-            default:
-              ticketsToAward = 1;
-              break;
-          }
-        }
+        // if (predictedLabel.contains('その他')) {
+        //   ticketsToAward = 1;
+        // } else {
+        //   switch (predictedLabel) {
+        //     case '段ボール':
+        //       awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.fire);
+        //       break;
+        //     case 'プラスチック':
+        //       awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.water);
+        //       break;
+        //     case '紙':
+        //       awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.wood);
+        //       break;
+        //     case 'ガラス':
+        //       awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.light);
+        //       break;
+        //     case '金属':
+        //       awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.dark);
+        //       break;
+        //     default:
+        //       ticketsToAward = 1;
+        //       break;
+        //   }
+        // }
 
-        if (awardedMonster != null) {
-          gameState.addMonster(awardedMonster);
-          resultText += '\n${_getAttributeJapaneseName(awardedMonster.attribute)}の${awardedMonster.name}をゲットしました！';
-        } else if (ticketsToAward > 0) {
-          gameState.addGachaTickets(ticketsToAward);
-          resultText += '\nガチャチケットを$ticketsToAward枚獲得しました！';
-        } else {
-          resultText += '\n今回は何も獲得できませんでした。';
-        }
+        // if (awardedMonster != null) {
+        //   gameState.addMonster(awardedMonster);
+        //   resultText += '\n${_getAttributeJapaneseName(awardedMonster.attribute)}の${awardedMonster.name}をゲットしました！';
+        // } else if (ticketsToAward > 0) {
+        //   gameState.addGachaTickets(ticketsToAward);
+        //   resultText += '\nガチャチケットを$ticketsToAward枚獲得しました！';
+        // } else {
+        //   resultText += '\n今回は何も獲得できませんでした。';
+        // }
+        // ★★★ここまでゲーム要素に関連するコードを削除または修正★★★
 
+        // ゲーム要素の報酬部分を削除したため、シンプルに分類結果のみを表示する
+        // resultText は既に設定されているので、このまま使用する
+        // 必要に応じて、分類結果以外の追加メッセージをここに追加しても良い
       } else {
         resultText = '分類結果を特定できませんでした。';
       }
@@ -321,8 +327,6 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      // AppBarは_MainScreenで管理されるため、ここでは不要（必要であれば個別に設定も可能）
-      // appBar: AppBar(title: Text('ごみ分別AI'),),
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(20.0),

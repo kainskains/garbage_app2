@@ -1,11 +1,8 @@
 // lib/screens/main_screen.dart
 
 import 'package:flutter/material.dart';
-import 'package:garbage_app/screens/gacha_screen.dart';
-import 'package:garbage_app/screens/stage_selection_screen.dart';
 import 'package:garbage_app/screens/trash_recognition_screen.dart';
-import 'package:garbage_app/screens/monster_list_screen.dart';
-import 'package:garbage_app/screens/inventory_screen.dart'; // ★追加: インベントリ画面をインポート★
+import 'package:garbage_app/screens/settings_screen.dart'; // ★追加: 設定画面をインポート★
 
 class MainScreen extends StatefulWidget {
   const MainScreen({super.key});
@@ -24,10 +21,7 @@ class _MainScreenState extends State<MainScreen> {
     super.initState();
     _widgetOptions = <Widget>[
       const TrashRecognitionScreen(), // インデックス0: メインの分別機能
-      const MonsterListScreen(),      // インデックス1: モンスター一覧
-      const StageSelectionScreen(),   // インデックス2: ステージ選択
-      const GachaScreen(),            // インデックス3: ガチャ
-      const InventoryScreen(),        // ★追加: インデックス4: インベントリ★
+      const SettingsScreen(),         // ★追加: インデックス1: 設定画面★
     ];
   }
 
@@ -41,9 +35,8 @@ class _MainScreenState extends State<MainScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('ごみ分別モンスターズ'),
+        title: const Text('ごみ分別'),
         backgroundColor: Colors.green,
-        // AppBarにアクションボタンは不要になる (BottomNavigationBarで対応するため)
       ),
       body: Center(
         child: _widgetOptions.elementAt(_selectedIndex), // 選択された画面を表示
@@ -54,28 +47,16 @@ class _MainScreenState extends State<MainScreen> {
             icon: Icon(Icons.camera_alt), // 分別機能っぽいアイコン
             label: '分別',
           ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.pets), // モンスターっぽいアイコン
-            label: 'モンスター',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.map), // ステージっぽいアイコン
-            label: 'ステージ',
-          ),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.casino), // ガチャっぽいアイコン
-            label: 'ガチャ',
-          ),
-          BottomNavigationBarItem( // ★追加: インベントリタブ★
-            icon: Icon(Icons.inventory), // インベントリっぽいアイコン
-            label: 'インベントリ',
+          BottomNavigationBarItem( // ★追加: 設定タブ★
+            icon: Icon(Icons.settings), // 設定っぽいアイコン
+            label: '設定',
           ),
         ],
         currentIndex: _selectedIndex,
         selectedItemColor: Colors.amber[800],
         unselectedItemColor: Colors.grey,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, // アイテム数が多い場合はfixedが推奨
+        type: BottomNavigationBarType.fixed, // アイテム数に応じてfixedかshiftingを選択
       ),
     );
   }
