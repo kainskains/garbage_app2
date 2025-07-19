@@ -146,10 +146,9 @@ class _CalendarScreenState extends State<CalendarScreen> {
           if (rule.frequencies.contains(CollectionFrequency.fourthWeek) && weekOfMonth == 4) {
             matchesFrequency = true;
           }
-          // 必要であれば fifthWeek もここに追加
-          // if (rule.frequencies.contains(CollectionFrequency.fifthWeek) && weekOfMonth == 5) {
-          //   matchesFrequency = true;
-          // }
+          if (rule.frequencies.contains(CollectionFrequency.fifthWeek) && weekOfMonth == 5) { // ★第5週目ロジック追加★
+            matchesFrequency = true;
+          }
         }
 
 
@@ -176,8 +175,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
 
   // 選択された日のイベントを表示するウィジェット
   Widget _buildSelectedDayEvents(GarbageCollectionSettings settingsProvider, List<GarbageType> garbageTypes, DateTime day) {
-    // List<String> eventNames = garbageTypes.map((type) => settingsProvider.getGarbageTypeName(type)).toList(); // この行はもう不要、削除
-
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

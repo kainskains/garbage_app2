@@ -33,6 +33,7 @@ enum CollectionFrequency {
   secondWeek,   // 第2週目
   thirdWeek,    // 第3週目
   fourthWeek,   // 第4週目
+  fifthWeek,    // ★追加: 第5週目★
   // 必要であれば fifthWeek なども追加
   // none は頻度選択では使わない（全体ルール未設定はCollectionRuleオブジェクト自体がない場合で判断）
 }
@@ -185,6 +186,7 @@ class GarbageCollectionSettings with ChangeNotifier {
       case CollectionFrequency.secondWeek: return '第2週目';
       case CollectionFrequency.thirdWeek: return '第3週目';
       case CollectionFrequency.fourthWeek: return '第4週目';
+      case CollectionFrequency.fifthWeek: return '第5週目'; // ★追加: 第5週目★
     // case CollectionFrequency.none: return '未設定'; // ここは不要
     }
   }
