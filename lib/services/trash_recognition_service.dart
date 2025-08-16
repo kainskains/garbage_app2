@@ -6,23 +6,14 @@ import 'package:url_launcher/url_launcher.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:tflite_flutter/tflite_flutter.dart';
 import 'package:image/image.dart' as img;
+import 'package:garbage_app/services/address_service.dart'; // AddressServiceをインポート
 
 class TrashRecognitionService {
   static const String _baseGomisukuUrl = 'https://www.gomisaku.jp';
   static Interpreter? _interpreter;
   static List<String> _labels = [];
 
-  // ごみサクの地域IDと地域名の対応をマッピング（一部のみ）
-  // このマップは必要に応じて拡充してください
-  static const Map<String, String> _cityIdMap = {
-    '東京都新宿区': '0263',
-    '東京都杉並区': '0207',
-    '大阪府大阪市': '0184',
-    '愛知県名古屋市': '0185',
-    '神奈川県横浜市': '0183',
-    '福岡県福岡市': '0187',
-    '北海道札幌市': '0186',
-  };
+  // 地域IDのマップは不要になりました
 
   /// TFLiteモデルとラベルを非同期でロードする
   static Future<void> loadModel() async {
@@ -39,18 +30,17 @@ class TrashRecognitionService {
   /// 画像をモデルの入力形式に前処理する
   static List<List<List<List<double>>>> preprocessImage(File imageFile) {
     final image = img.decodeImage(imageFile.readAsBytesSync())!;
-    final resizedImage = img.copyResize(image, width: 224, height: 224); // モデルの入力サイズに合わせる
+    final resizedImage = img.copyResize(image, width: 224, height: 224);
     final imageBytes = resizedImage.getBytes();
 
-    // モデルの入力形式に変換（224x224x3）
     final input = List.generate(1, (_) => List.generate(224, (_) => List.generate(224, (_) => List<double>.filled(3, 0.0))));
     for (int y = 0; y < 224; y++) {
       for (int x = 0; x < 224; x++) {
-        final pixelIndex = (y * 224 + x) * 3; // RGBの各ピクセルは3バイト
+        final pixelIndex = (y * 224 + x) * 3;
         if (pixelIndex + 2 < imageBytes.length) {
-          input[0][y][x][0] = imageBytes[pixelIndex] / 255.0;     // R
-          input[0][y][x][1] = imageBytes[pixelIndex + 1] / 255.0; // G
-          input[0][y][x][2] = imageBytes[pixelIndex + 2] / 255.0; // B
+          input[0][y][x][0] = imageBytes[pixelIndex] / 255.0;
+          input[0][y][x][1] = imageBytes[pixelIndex + 1] / 255.0;
+          input[0][y][x][2] = imageBytes[pixelIndex + 2] / 255.0;
         }
       }
     }
@@ -69,15 +59,11 @@ class TrashRecognitionService {
       }
 
       final input = preprocessImage(imageFile);
-
       final output = List.generate(1, (_) => List<double>.filled(_labels.length, 0.0));
-
       _interpreter!.run(input, output);
-
       final maxScore = output[0].reduce((a, b) => a > b ? a : b);
       final maxScoreIndex = output[0].indexOf(maxScore);
       final label = _labels[maxScoreIndex];
-
       final categoryMap = {
         'ペットボトル': '資源ごみ',
         '缶': '資源ごみ',
@@ -92,7 +78,6 @@ class TrashRecognitionService {
         '紙パック': '牛乳パック等',
         '乾電池': '単三・単四電池等',
       };
-
       return TrashRecognitionResult(
         label: label,
         confidence: maxScore,
@@ -111,16 +96,14 @@ class TrashRecognitionService {
       final prefs = await SharedPreferences.getInstance();
       final prefecture = prefs.getString('prefecture') ?? '';
       final city = prefs.getString('city') ?? '';
-      final fullAddress = '$prefecture$city';
-      final cityId = _cityIdMap[fullAddress];
+      final gomisakuId = AddressService.getGomisakuIdForCity(prefecture, city);
 
-      // 地域IDが存在する場合
-      if (cityId != null) {
-        // ハッシュフラグメントを使用した新しいURL形式
-        return '$_baseGomisukuUrl/$cityId/?lang=ja#gomisaku_keyword:${Uri.encodeComponent(itemLabel)}';
+      if (gomisakuId != null) {
+        // 地域IDが存在する場合
+        return '$_baseGomisukuUrl/$gomisakuId/?lang=ja#gomisaku_keyword:${Uri.encodeComponent(itemLabel)}';
       } else {
-        // 地域IDが存在しない場合は、一般的な検索形式に戻す
-        return '$_baseGomisukuUrl/?search_region=${Uri.encodeComponent(fullAddress)}&search_word=${Uri.encodeComponent(itemLabel)}';
+        // 地域IDが存在しない場合
+        return '$_baseGomisukuUrl/?search_region=${Uri.encodeComponent('$prefecture$city')}&search_word=${Uri.encodeComponent(itemLabel)}';
       }
     } catch (e) {
       debugPrint('URL生成エラー: $e');
@@ -134,10 +117,7 @@ class TrashRecognitionService {
       final url = await generateGomisukuUrl(itemLabel);
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
-        await launchUrl(
-          uri,
-          mode: LaunchMode.externalApplication,
-        );
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         throw Exception('URLを開けませんでした: $url');
       }
@@ -166,33 +146,8 @@ class TrashRecognitionService {
       return null;
     }
   }
-
-  /// 都道府県に対応するサポートされている市区町村リストを返す
-  static Future<List<String>> getSupportedCities(String prefecture) async {
-    final supportedCities = <String>[];
-    for (final key in _cityIdMap.keys) {
-      if (key.startsWith(prefecture)) {
-        supportedCities.add(key.replaceFirst(prefecture, ''));
-      }
-    }
-    return supportedCities;
-  }
-
-  /// ユーザーが設定した都市がサポートされているかどうかを判定する
-  static Future<bool> isCitySupported() async {
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      final prefecture = prefs.getString('prefecture') ?? '';
-      final city = prefs.getString('city') ?? '';
-      final fullAddress = '$prefecture$city';
-      return _cityIdMap.containsKey(fullAddress);
-    } catch (e) {
-      return false;
-    }
-  }
 }
 
-/// ゴミ認識の結果を保持するためのデータクラス
 class TrashRecognitionResult {
   final String label;
   final double confidence;

@@ -34,3 +34,4 @@ flutter:
   assets:
     - assets/garbage_model.tflite
     - assets/labels.txt
+    - assets/addresses.json

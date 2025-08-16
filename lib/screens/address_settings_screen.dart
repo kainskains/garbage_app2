@@ -1,6 +1,7 @@
 // lib/screens/address_settings_screen.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:garbage_app/services/address_service.dart'; // AddressServiceをインポート
 
 class AddressSettingsScreen extends StatefulWidget {
   const AddressSettingsScreen({super.key});
@@ -15,45 +16,13 @@ class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
   String? _selectedPrefecture;
   String? _selectedCity;
 
-  // 地域ブロックの定義
-  static const List<String> _regions = [
-    '北海道',
-    '東北',
-    '関東',
-    '中部',
-    '近畿',
-    '中国',
-    '四国',
-    '九州・沖縄',
-  ];
-
-  // 地域ブロックごとの都道府県リスト
-  static const Map<String, List<String>> _regionPrefectures = {
-    '北海道': ['北海道'],
-    '東北': ['青森県', '岩手県', '宮城県', '秋田県', '山形県', '福島県'],
-    '関東': ['茨城県', '栃木県', '群馬県', '埼玉県', '千葉県', '東京都', '神奈川県'],
-    '中部': ['新潟県', '富山県', '石川県', '福井県', '山梨県', '長野県', '岐阜県', '静岡県', '愛知県'],
-    '近畿': ['三重県', '滋賀県', '京都府', '大阪府', '兵庫県', '奈良県', '和歌山県'],
-    '中国': ['鳥取県', '島根県', '岡山県', '広島県', '山口県'],
-    '四国': ['徳島県', '香川県', '愛媛県', '高知県'],
-    '九州・沖縄': ['福岡県', '佐賀県', '長崎県', '熊本県', '大分県', '宮崎県', '鹿児島県', '沖縄県'],
-  };
-
-  // 都道府県ごとの市区町村リスト（デモ用）
-  static const Map<String, List<String>> _cities = {
-    '東京都': ['新宿区', '渋谷区', '世田谷区', '港区', '杉並区'], // 杉並区を追加
-    '神奈川県': ['横浜市', '川崎市', '相模原市', '藤沢市'],
-    '大阪府': ['大阪市', '堺市', '東大阪市', '豊中市'],
-    '愛知県': ['名古屋市', '豊田市', '一宮市', '岡崎市'],
-    '北海道': ['札幌市', '函館市', '旭川市', '釧路市'],
-    '福岡県': ['福岡市', '北九州市', '久留米市', '大牟田市'],
-    '宮城県': ['仙台市', '石巻市', '大崎市', '登米市'],
-  };
-
   @override
   void initState() {
     super.initState();
-    _loadAddressSettings();
+    // 住所データを事前にロード
+    AddressService.loadAddresses().then((_) {
+      _loadAddressSettings();
+    });
   }
 
   @override
@@ -71,13 +40,14 @@ class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
       _selectedPrefecture = savedPrefecture;
       if (_selectedPrefecture != null) {
         // 保存された都道府県から地域を特定
-        _selectedRegion = _regionPrefectures.entries
-            .firstWhere((entry) => entry.value.contains(_selectedPrefecture!))
-            .key;
+        try {
+          _selectedRegion = AddressService.getRegions().firstWhere((region) => AddressService.getPrefecturesForRegion(region).contains(_selectedPrefecture!));
+        } catch (e) {
+          _selectedRegion = null;
+        }
 
-        // 保存された市区町村が現在の都道府県リストにあるか確認し、なければnullにする
-        // これがエラーを修正する重要なロジックです
-        if (_cities[_selectedPrefecture]?.contains(savedCity) == true) {
+        // 保存された市区町村が現在の都道府県リストにあるか確認
+        if (AddressService.getCitiesForPrefecture(_selectedPrefecture!).contains(savedCity)) {
           _selectedCity = savedCity;
         } else {
           _selectedCity = null;
@@ -116,8 +86,8 @@ class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
 
   @override
   Widget build(BuildContext context) {
-    List<String> prefecturesForSelectedRegion = _regionPrefectures[_selectedRegion] ?? [];
-    List<String> citiesForSelectedPrefecture = _cities[_selectedPrefecture] ?? [];
+    List<String> prefecturesForSelectedRegion = _selectedRegion != null ? AddressService.getPrefecturesForRegion(_selectedRegion!) : [];
+    List<String> citiesForSelectedPrefecture = _selectedPrefecture != null ? AddressService.getCitiesForPrefecture(_selectedPrefecture!) : [];
 
     return Scaffold(
       appBar: AppBar(
@@ -162,7 +132,7 @@ class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
                     prefixIcon: Icon(Icons.public),
                     border: OutlineInputBorder(),
                   ),
-                  items: _regions.map((String value) {
+                  items: AddressService.getRegions().map((String value) {
                     return DropdownMenuItem<String>(
                       value: value,
                       child: Text(value),

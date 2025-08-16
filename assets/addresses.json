@@ -1,0 +1,294 @@
+[
+  {
+    "region": "北海道",
+    "prefectures": [
+      {
+        "prefecture": "北海道",
+        "cities": [
+          { "name": "札幌市", "gomisaku_id": "0186" },
+          { "name": "函館市", "gomisaku_id": null },
+          { "name": "旭川市", "gomisaku_id": null },
+          { "name": "釧路市", "gomisaku_id": null }
+        ]
+      }
+    ]
+  },
+  {
+    "region": "東北",
+    "prefectures": [
+      {
+        "prefecture": "青森県",
+        "cities": []
+      },
+      {
+        "prefecture": "岩手県",
+        "cities": []
+      },
+      {
+        "prefecture": "宮城県",
+        "cities": [
+          { "name": "仙台市", "gomisaku_id": "0257" },
+          { "name": "石巻市", "gomisaku_id": null },
+          { "name": "大崎市", "gomisaku_id": null },
+          { "name": "登米市", "gomisaku_id": null }
+        ]
+      },
+      {
+        "prefecture": "秋田県",
+        "cities": []
+      },
+      {
+        "prefecture": "山形県",
+        "cities": []
+      },
+      {
+        "prefecture": "福島県",
+        "cities": [
+          { "name": "郡山市", "gomisaku_id": "0245" }
+        ]
+      }
+    ]
+  },
+  {
+    "region": "関東",
+    "prefectures": [
+      {
+        "prefecture": "茨城県",
+        "cities": []
+      },
+      {
+        "prefecture": "栃木県",
+        "cities": [
+          { "name": "宇都宮市", "gomisaku_id": "0209" }
+        ]
+      },
+      {
+        "prefecture": "群馬県",
+        "cities": []
+      },
+      {
+        "prefecture": "埼玉県",
+        "cities": [
+          { "name": "さいたま市", "gomisaku_id": "0254" }
+        ]
+      },
+      {
+        "prefecture": "千葉県",
+        "cities": [
+          { "name": "千葉市", "gomisaku_id": "0259" }
+        ]
+      },
+      {
+        "prefecture": "東京都",
+        "cities": [
+          { "name": "新宿区", "gomisaku_id": "0263" },
+          { "name": "杉並区", "gomisaku_id": "0207" },
+          { "name": "世田谷区", "gomisaku_id": null },
+          { "name": "港区", "gomisaku_id": null },
+          { "name": "渋谷区", "gomisaku_id": null }
+        ]
+      },
+      {
+        "prefecture": "神奈川県",
+        "cities": [
+          { "name": "横浜市", "gomisaku_id": "0183" },
+          { "name": "川崎市", "gomisaku_id": null },
+          { "name": "相模原市", "gomisaku_id": "0219" },
+          { "name": "藤沢市", "gomisaku_id": null }
+        ]
+      }
+    ]
+  },
+  {
+    "region": "中部",
+    "prefectures": [
+      {
+        "prefecture": "新潟県",
+        "cities": [
+          { "name": "新潟市", "gomisaku_id": "0251" }
+        ]
+      },
+      {
+        "prefecture": "富山県",
+        "cities": []
+      },
+      {
+        "prefecture": "石川県",
+        "cities": []
+      },
+      {
+        "prefecture": "福井県",
+        "cities": []
+      },
+      {
+        "prefecture": "山梨県",
+        "cities": []
+      },
+      {
+        "prefecture": "長野県",
+        "cities": [
+          { "name": "長野市", "gomisaku_id": "0265" }
+        ]
+      },
+      {
+        "prefecture": "岐阜県",
+        "cities": []
+      },
+      {
+        "prefecture": "静岡県",
+        "cities": [
+          { "name": "静岡市", "gomisaku_id": "0223" }
+        ]
+      },
+      {
+        "prefecture": "愛知県",
+        "cities": [
+          { "name": "名古屋市", "gomisaku_id": "0185" },
+          { "name": "豊田市", "gomisaku_id": null },
+          { "name": "一宮市", "gomisaku_id": null },
+          { "name": "岡崎市", "gomisaku_id": null }
+        ]
+      }
+    ]
+  },
+  {
+    "region": "近畿",
+    "prefectures": [
+      {
+        "prefecture": "三重県",
+        "cities": []
+      },
+      {
+        "prefecture": "滋賀県",
+        "cities": [
+          { "name": "大津市", "gomisaku_id": "0217" }
+        ]
+      },
+      {
+        "prefecture": "京都府",
+        "cities": [
+          { "name": "京都市", "gomisaku_id": "0218" }
+        ]
+      },
+      {
+        "prefecture": "大阪府",
+        "cities": [
+          { "name": "大阪市", "gomisaku_id": "0184" },
+          { "name": "堺市", "gomisaku_id": null },
+          { "name": "東大阪市", "gomisaku_id": null },
+          { "name": "豊中市", "gomisaku_id": null }
+        ]
+      },
+      {
+        "prefecture": "兵庫県",
+        "cities": [
+          { "name": "神戸市", "gomisaku_id": "0222" }
+        ]
+      },
+      {
+        "prefecture": "奈良県",
+        "cities": [
+          { "name": "奈良市", "gomisaku_id": "0260" }
+        ]
+      },
+      {
+        "prefecture": "和歌山県",
+        "cities": []
+      }
+    ]
+  },
+  {
+    "region": "中国",
+    "prefectures": [
+      {
+        "prefecture": "鳥取県",
+        "cities": []
+      },
+      {
+        "prefecture": "島根県",
+        "cities": []
+      },
+      {
+        "prefecture": "岡山県",
+        "cities": []
+      },
+      {
+        "prefecture": "広島県",
+        "cities": [
+          { "name": "広島市", "gomisaku_id": "0224" }
+        ]
+      },
+      {
+        "prefecture": "山口県",
+        "cities": []
+      }
+    ]
+  },
+  {
+    "region": "四国",
+    "prefectures": [
+      {
+        "prefecture": "徳島県",
+        "cities": []
+      },
+      {
+        "prefecture": "香川県",
+        "cities": [
+          { "name": "高松市", "gomisaku_id": "0248" }
+        ]
+      },
+      {
+        "prefecture": "愛媛県",
+        "cities": []
+      },
+      {
+        "prefecture": "高知県",
+        "cities": []
+      }
+    ]
+  },
+  {
+    "region": "九州・沖縄",
+    "prefectures": [
+      {
+        "prefecture": "福岡県",
+        "cities": [
+          { "name": "福岡市", "gomisaku_id": "0187" },
+          { "name": "北九州市", "gomisaku_id": null },
+          { "name": "久留米市", "gomisaku_id": null },
+          { "name": "大牟田市", "gomisaku_id": null }
+        ]
+      },
+      {
+        "prefecture": "佐賀県",
+        "cities": []
+      },
+      {
+        "prefecture": "長崎県",
+        "cities": []
+      },
+      {
+        "prefecture": "熊本県",
+        "cities": [
+          { "name": "熊本市", "gomisaku_id": "0258" }
+        ]
+      },
+      {
+        "prefecture": "大分県",
+        "cities": []
+      },
+      {
+        "prefecture": "宮崎県",
+        "cities": []
+      },
+      {
+        "prefecture": "鹿児島県",
+        "cities": []
+      },
+      {
+        "prefecture": "沖縄県",
+        "cities": []
+      }
+    ]
+  }
+]
