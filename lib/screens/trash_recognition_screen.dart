@@ -1,4 +1,3 @@
-// lib/screens/trash_recognition_screen.dart
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -7,10 +6,7 @@ import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:typed_data';
 import 'dart:math' as math;
-// import 'package:provider/provider.dart'; // GameStateを使用しないため不要
-// import 'package:garbage_app/state/game_state.dart'; // GameStateは削除済みなので不要
-// import 'package:garbage_app/services/gacha_service.dart'; // ガチャ機能削除のため不要
-// import 'package:garbage_app/models/monster.dart'; // モンスター関連機能削除のため不要
+import 'package:url_launcher/url_launcher.dart'; // 追加
 
 class TrashRecognitionScreen extends StatefulWidget {
   const TrashRecognitionScreen({super.key});
@@ -31,8 +27,6 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
   final int _inputChannels = 3;
 
   TensorType _expectedInputType = TensorType.float32;
-
-  // final GachaService _gachaService = GachaService(); // ガチャ機能削除のため不要
 
   @override
   void initState() {
@@ -107,25 +101,6 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
     }
     return inputBytes;
   }
-
-  // MonsterAttributeはゲーム要素なので、このメソッドは不要になる
-  // String _getAttributeJapaneseName(MonsterAttribute attribute) {
-  //   switch (attribute) {
-  //     case MonsterAttribute.fire:
-  //       return '火属性';
-  //     case MonsterAttribute.water:
-  //       return '水属性';
-  //     case MonsterAttribute.wood:
-  //       return '木属性';
-  //     case MonsterAttribute.light:
-  //       return '光属性';
-  //     case MonsterAttribute.dark:
-  //       return '闇属性';
-  //     case MonsterAttribute.none:
-  //       return 'なし';
-  //   }
-  // }
-
 
   Future<void> _runInference(File imageFile) async {
     if (_interpreter == null || _labels == null) {
@@ -206,51 +181,6 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
       if (predictedIndex != -1 && _labels != null && predictedIndex < _labels!.length) {
         predictedLabel = _labels![predictedIndex];
         resultText = '分類結果: $predictedLabel (信頼度: ${(maxProbability * 100).toStringAsFixed(2)}%)';
-
-        // ★★★ここからゲーム要素に関連するコードを削除または修正★★★
-        // final gameState = Provider.of<GameState>(context, listen: false);
-        // int ticketsToAward = 0;
-        // Monster? awardedMonster;
-
-        // if (predictedLabel.contains('その他')) {
-        //   ticketsToAward = 1;
-        // } else {
-        //   switch (predictedLabel) {
-        //     case '段ボール':
-        //       awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.fire);
-        //       break;
-        //     case 'プラスチック':
-        //       awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.water);
-        //       break;
-        //     case '紙':
-        //       awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.wood);
-        //       break;
-        //     case 'ガラス':
-        //       awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.light);
-        //       break;
-        //     case '金属':
-        //       awardedMonster = _gachaService.getRandomMonsterByAttribute(MonsterAttribute.dark);
-        //       break;
-        //     default:
-        //       ticketsToAward = 1;
-        //       break;
-        //   }
-        // }
-
-        // if (awardedMonster != null) {
-        //   gameState.addMonster(awardedMonster);
-        //   resultText += '\n${_getAttributeJapaneseName(awardedMonster.attribute)}の${awardedMonster.name}をゲットしました！';
-        // } else if (ticketsToAward > 0) {
-        //   gameState.addGachaTickets(ticketsToAward);
-        //   resultText += '\nガチャチケットを$ticketsToAward枚獲得しました！';
-        // } else {
-        //   resultText += '\n今回は何も獲得できませんでした。';
-        // }
-        // ★★★ここまでゲーム要素に関連するコードを削除または修正★★★
-
-        // ゲーム要素の報酬部分を削除したため、シンプルに分類結果のみを表示する
-        // resultText は既に設定されているので、このまま使用する
-        // 必要に応じて、分類結果以外の追加メッセージをここに追加しても良い
       } else {
         resultText = '分類結果を特定できませんでした。';
       }
@@ -321,6 +251,34 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
       setState(() {
         _predictionResult = 'エラー: 画像の選択に失敗しました。$e';
       });
+    }
+  }
+
+  // ゴミサクで検索する関数
+  Future<void> _openGomisukuPage() async {
+    if (_labels == null || _predictionResult.contains('不明') || !_predictionResult.contains('分類結果:')) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('分類結果が取得できていません。画像を分類してください。')),
+      );
+      return;
+    }
+
+    final String predictedLabel = _predictionResult.split('分類結果: ')[1].split(' (信頼度:')[0];
+    try {
+      final url = 'https://www.gomisaku.jp/?search_word=${Uri.encodeComponent(predictedLabel)}&lang=ja';
+      final uri = Uri.parse(url);
+      if (await canLaunchUrl(uri)) {
+        await launchUrl(uri, mode: LaunchMode.externalApplication);
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('ゴミサクページを開けませんでした。')),
+        );
+      }
+    } catch (e) {
+      print('Error opening Gomisuku page: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text('エラー: $e')),
+      );
     }
   }
 
@@ -418,6 +376,17 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
                     ),
                   ),
                 ],
+              ),
+              const SizedBox(height: 15),
+              Center(
+                child: ElevatedButton.icon(
+                  onPressed: _openGomisukuPage,
+                  icon: const Icon(Icons.search),
+                  label: const Text('ゴミサクで検索'),
+                  style: ElevatedButton.styleFrom(
+                    minimumSize: const Size(200, 50),
+                  ),
+                ),
               ),
               const SizedBox(height: 30),
             ],
