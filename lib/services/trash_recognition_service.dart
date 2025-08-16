@@ -12,9 +12,11 @@ class TrashRecognitionService {
   static Interpreter? _interpreter;
   static List<String> _labels = [];
 
+  // ごみサクの地域IDと地域名の対応をマッピング（一部のみ）
+  // このマップは必要に応じて拡充してください
   static const Map<String, String> _cityIdMap = {
     '東京都新宿区': '0263',
-    '東京都渋谷区': '0207',
+    '東京都杉並区': '0207',
     '大阪府大阪市': '0184',
     '愛知県名古屋市': '0185',
     '神奈川県横浜市': '0183',
@@ -22,7 +24,7 @@ class TrashRecognitionService {
     '北海道札幌市': '0186',
   };
 
-  // TFLiteモデルの初期化
+  /// TFLiteモデルとラベルを非同期でロードする
   static Future<void> loadModel() async {
     try {
       _interpreter = await Interpreter.fromAsset('assets/garbage_model.tflite');
@@ -34,7 +36,7 @@ class TrashRecognitionService {
     }
   }
 
-  // 画像を前処理
+  /// 画像をモデルの入力形式に前処理する
   static List<List<List<List<double>>>> preprocessImage(File imageFile) {
     final image = img.decodeImage(imageFile.readAsBytesSync())!;
     final resizedImage = img.copyResize(image, width: 224, height: 224); // モデルの入力サイズに合わせる
@@ -55,7 +57,7 @@ class TrashRecognitionService {
     return input;
   }
 
-  // ゴミの認識
+  /// ゴミの画像を認識し、結果を返す
   static Future<TrashRecognitionResult?> recognizeTrash(File imageFile) async {
     try {
       if (_interpreter == null) {
@@ -103,6 +105,7 @@ class TrashRecognitionService {
     }
   }
 
+  /// 認識結果とユーザーの住所に基づいてゴミサクのURLを生成する
   static Future<String> generateGomisukuUrl(String itemLabel) async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -110,9 +113,13 @@ class TrashRecognitionService {
       final city = prefs.getString('city') ?? '';
       final fullAddress = '$prefecture$city';
       final cityId = _cityIdMap[fullAddress];
+
+      // 地域IDが存在する場合
       if (cityId != null) {
-        return '$_baseGomisukuUrl/$cityId/?search_word=${Uri.encodeComponent(itemLabel)}&lang=ja';
+        // ハッシュフラグメントを使用した新しいURL形式
+        return '$_baseGomisukuUrl/$cityId/?lang=ja#gomisaku_keyword:${Uri.encodeComponent(itemLabel)}';
       } else {
+        // 地域IDが存在しない場合は、一般的な検索形式に戻す
         return '$_baseGomisukuUrl/?search_region=${Uri.encodeComponent(fullAddress)}&search_word=${Uri.encodeComponent(itemLabel)}';
       }
     } catch (e) {
@@ -121,6 +128,7 @@ class TrashRecognitionService {
     }
   }
 
+  /// 生成されたURLをごみサクのページを開く
   static Future<void> openGomisukuPage(String itemLabel) async {
     try {
       final url = await generateGomisukuUrl(itemLabel);
@@ -139,6 +147,7 @@ class TrashRecognitionService {
     }
   }
 
+  /// カメラまたはギャラリーから画像を選択する
   static Future<File?> pickImage(ImageSource source) async {
     try {
       final picker = ImagePicker();
@@ -158,6 +167,7 @@ class TrashRecognitionService {
     }
   }
 
+  /// 都道府県に対応するサポートされている市区町村リストを返す
   static Future<List<String>> getSupportedCities(String prefecture) async {
     final supportedCities = <String>[];
     for (final key in _cityIdMap.keys) {
@@ -168,6 +178,7 @@ class TrashRecognitionService {
     return supportedCities;
   }
 
+  /// ユーザーが設定した都市がサポートされているかどうかを判定する
   static Future<bool> isCitySupported() async {
     try {
       final prefs = await SharedPreferences.getInstance();
@@ -181,6 +192,7 @@ class TrashRecognitionService {
   }
 }
 
+/// ゴミ認識の結果を保持するためのデータクラス
 class TrashRecognitionResult {
   final String label;
   final double confidence;
