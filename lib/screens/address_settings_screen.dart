@@ -11,11 +11,8 @@ class AddressSettingsScreen extends StatefulWidget {
 
 class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
   final _formKey = GlobalKey<FormState>();
-  final _postalCodeController = TextEditingController();
   final _prefectureController = TextEditingController();
   final _cityController = TextEditingController();
-  final _streetController = TextEditingController();
-  final _buildingController = TextEditingController();
 
   @override
   void initState() {
@@ -25,11 +22,8 @@ class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
 
   @override
   void dispose() {
-    _postalCodeController.dispose();
     _prefectureController.dispose();
     _cityController.dispose();
-    _streetController.dispose();
-    _buildingController.dispose();
     super.dispose();
   }
 
@@ -37,11 +31,8 @@ class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
   Future<void> _loadAddressSettings() async {
     final prefs = await SharedPreferences.getInstance();
     setState(() {
-      _postalCodeController.text = prefs.getString('postal_code') ?? '';
       _prefectureController.text = prefs.getString('prefecture') ?? '';
       _cityController.text = prefs.getString('city') ?? '';
-      _streetController.text = prefs.getString('street') ?? '';
-      _buildingController.text = prefs.getString('building') ?? '';
     });
   }
 
@@ -49,11 +40,8 @@ class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
   Future<void> _saveAddressSettings() async {
     if (_formKey.currentState!.validate()) {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('postal_code', _postalCodeController.text);
       await prefs.setString('prefecture', _prefectureController.text);
       await prefs.setString('city', _cityController.text);
-      await prefs.setString('street', _streetController.text);
-      await prefs.setString('building', _buildingController.text);
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -64,19 +52,6 @@ class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
         );
       }
     }
-  }
-
-  // 郵便番号の形式をチェックする
-  String? _validatePostalCode(String? value) {
-    if (value == null || value.isEmpty) {
-      return '郵便番号を入力してください';
-    }
-    // 日本の郵便番号形式（例: 123-4567 または 1234567）
-    final regex = RegExp(r'^\d{3}-?\d{4}$');
-    if (!regex.hasMatch(value)) {
-      return '正しい郵便番号を入力してください（例: 123-4567）';
-    }
-    return null;
   }
 
   // 必須フィールドの検証
@@ -121,25 +96,6 @@ class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
             ),
             const SizedBox(height: 24),
 
-            // 郵便番号
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: _postalCodeController,
-                  decoration: const InputDecoration(
-                    labelText: '郵便番号',
-                    hintText: '123-4567',
-                    prefixIcon: Icon(Icons.mail_outline),
-                    border: OutlineInputBorder(),
-                  ),
-                  keyboardType: TextInputType.number,
-                  validator: _validatePostalCode,
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
             // 都道府県
             Card(
               child: Padding(
@@ -171,41 +127,6 @@ class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
                     border: OutlineInputBorder(),
                   ),
                   validator: (value) => _validateRequired(value, '市区町村'),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 町名・番地
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: _streetController,
-                  decoration: const InputDecoration(
-                    labelText: '町名・番地',
-                    hintText: '神南1-2-3',
-                    prefixIcon: Icon(Icons.place),
-                    border: OutlineInputBorder(),
-                  ),
-                  validator: (value) => _validateRequired(value, '町名・番地'),
-                ),
-              ),
-            ),
-            const SizedBox(height: 16),
-
-            // 建物名・部屋番号（任意）
-            Card(
-              child: Padding(
-                padding: const EdgeInsets.all(16.0),
-                child: TextFormField(
-                  controller: _buildingController,
-                  decoration: const InputDecoration(
-                    labelText: '建物名・部屋番号（任意）',
-                    hintText: 'サンプルマンション101号',
-                    prefixIcon: Icon(Icons.apartment),
-                    border: OutlineInputBorder(),
-                  ),
                 ),
               ),
             ),

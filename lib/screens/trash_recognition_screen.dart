@@ -6,7 +6,9 @@ import 'package:image/image.dart' as img;
 import 'package:flutter/services.dart' show rootBundle;
 import 'dart:typed_data';
 import 'dart:math' as math;
-import 'package:url_launcher/url_launcher.dart'; // 追加
+import 'package:url_launcher/url_launcher.dart';
+import 'package:shared_preferences/shared_preferences.dart'; // 追加
+import 'package:garbage_app/services/trash_recognition_service.dart'; // 追加
 
 class TrashRecognitionScreen extends StatefulWidget {
   const TrashRecognitionScreen({super.key});
@@ -254,8 +256,12 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
     }
   }
 
-  // ゴミサクで検索する関数
+  // 住所に基づいたゴミサク検索
   Future<void> _openGomisukuPage() async {
+    final prefs = await SharedPreferences.getInstance();
+    final prefecture = prefs.getString('prefecture') ?? '';
+    final city = prefs.getString('city') ?? '';
+
     if (_labels == null || _predictionResult.contains('不明') || !_predictionResult.contains('分類結果:')) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('分類結果が取得できていません。画像を分類してください。')),
@@ -263,15 +269,23 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
       return;
     }
 
+    if (prefecture.isEmpty || city.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('住所が設定されていません。住所設定画面で入力してください。')),
+      );
+      return;
+    }
+
     final String predictedLabel = _predictionResult.split('分類結果: ')[1].split(' (信頼度:')[0];
     try {
-      final url = 'https://www.gomisaku.jp/?search_word=${Uri.encodeComponent(predictedLabel)}&lang=ja';
+      final url = await TrashRecognitionService.generateGomisukuUrl(predictedLabel);
+      print('Generated URL: $url'); // デバッグ用
       final uri = Uri.parse(url);
       if (await canLaunchUrl(uri)) {
         await launchUrl(uri, mode: LaunchMode.externalApplication);
       } else {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('ゴミサクページを開けませんでした。')),
+          const SnackBar(content: Text('ゴミサクページを開けませんでした。住所を確認してください。')),
         );
       }
     } catch (e) {
