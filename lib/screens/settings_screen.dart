@@ -1,7 +1,8 @@
 // lib/screens/settings_screen.dart
 import 'package:flutter/material.dart';
-import 'package:garbage_app/screens/address_settings_screen.dart'; // 住所設定画面
-import 'package:garbage_app/screens/reminder_settings_screen.dart'; // 新しく作成するリマインダー設定画面
+import 'package:garbage_app/screens/address_settings_screen.dart';
+import 'package:garbage_app/screens/reminder_settings_screen.dart';
+import 'package:garbage_app/screens/notification_settings_screen.dart'; // ★追加: 通知設定画面をインポート
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -41,13 +42,13 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
 
-          // ごみ収集リマインダー設定 (統合された新しい項目)
+          // ごみ収集リマインダー設定
           Card(
             margin: const EdgeInsets.symmetric(vertical: 8.0),
             child: ListTile(
               leading: const Icon(
-                Icons.schedule, // 新しいアイコン
-                color: Colors.green, // 新しい色
+                Icons.schedule,
+                color: Colors.green,
                 size: 28,
               ),
               title: const Text(
@@ -69,7 +70,6 @@ class SettingsScreen extends StatelessWidget {
 
           const SizedBox(height: 32),
 
-          // セクション分けのための区切り線とタイトル
           const Divider(thickness: 1),
           const SizedBox(height: 16),
 
@@ -84,7 +84,7 @@ class SettingsScreen extends StatelessWidget {
 
           const SizedBox(height: 16),
 
-          // 今後追加される可能性のある設定項目のプレースホルダー
+          // ★変更: 通知設定画面への遷移を追加★
           Card(
             margin: const EdgeInsets.symmetric(vertical: 8.0),
             child: ListTile(
@@ -103,11 +103,9 @@ class SettingsScreen extends StatelessWidget {
               ),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
-                // 今後実装予定
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('この機能は今後実装予定です'),
-                  ),
+                // 新しい通知設定画面へ遷移
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (context) => const NotificationSettingsScreen()),
                 );
               },
             ),
@@ -131,7 +129,6 @@ class SettingsScreen extends StatelessWidget {
               ),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
-                // アプリ情報表示
                 showAboutDialog(
                   context: context,
                   applicationName: 'ごみ収集アプリ',

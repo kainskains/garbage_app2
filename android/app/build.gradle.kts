@@ -11,12 +11,16 @@ android {
     ndkVersion = "27.0.12077973"
 
     compileOptions {
+        // ★コアライブラリの脱糖を有効にする
+        isCoreLibraryDesugaringEnabled = true
+        // Javaバージョンを11に設定
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
 
     kotlinOptions {
-        jvmTarget = JavaVersion.VERSION_11.toString()
+        // JVMターゲットを11に設定
+        jvmTarget = "11"
     }
 
     defaultConfig {
@@ -41,4 +45,9 @@ android {
 
 flutter {
     source = "../.."
+}
+
+dependencies {
+    // ★脱糖ライブラリを追加
+    coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
 }

@@ -59,24 +59,29 @@ class GarbageCollectionSettings with ChangeNotifier {
   Map<String, CollectionRule> _settings = {};
   List<GarbageType> _garbageTypes = [];
 
+  bool _isNotificationEnabled = false;
+  String? _notificationTime;
+  int? _minutesBeforeNotification; // ★追加: 通知までの分数★
+
   Map<String, CollectionRule> get settings => _settings;
   List<GarbageType> get garbageTypes => _garbageTypes;
+
+  bool get isNotificationEnabled => _isNotificationEnabled;
+  String? get notificationTime => _notificationTime;
+  int? get minutesBeforeNotification => _minutesBeforeNotification; // ★追加: getter★
 
   GarbageCollectionSettings() {
     loadSettings();
   }
 
-  // 設定とごみタイプの両方を読み込む
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
 
-    // ごみタイプのリストを読み込む
     final garbageTypesJsonString = prefs.getString('garbage_types');
     if (garbageTypesJsonString != null) {
       final List<dynamic> decodedList = jsonDecode(garbageTypesJsonString);
       _garbageTypes = decodedList.map((json) => GarbageType.fromJson(json as Map<String, dynamic>)).toList();
     } else {
-      // 保存されたデータがない場合は、デフォルトのごみタイプを初期化
       _garbageTypes = [
         GarbageType(type: 'burnable', name: '燃えるごみ', icon: Icons.local_fire_department),
         GarbageType(type: 'non_burnable', name: '燃えないごみ', icon: Icons.delete_forever),
@@ -86,20 +91,21 @@ class GarbageCollectionSettings with ChangeNotifier {
       ];
     }
 
-    // ごみ収集ルールを読み込む
     final settingsJsonString = prefs.getString('garbage_collection_settings');
     if (settingsJsonString != null) {
       final Map<String, dynamic> decodedData = jsonDecode(settingsJsonString);
       _settings = decodedData.map((key, value) => MapEntry(key, CollectionRule.fromJson(value)));
     } else {
-      // 永続化されたルールがない場合は、初期設定を作成
       _settings = {for (var type in _garbageTypes) type.type: CollectionRule.empty()};
     }
+
+    _isNotificationEnabled = prefs.getBool('isNotificationEnabled') ?? false;
+    _notificationTime = prefs.getString('notificationTime');
+    _minutesBeforeNotification = prefs.getInt('minutesBeforeNotification'); // ★追加★
 
     notifyListeners();
   }
 
-  // 設定とごみタイプの両方を保存する
   Future<void> saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
 
@@ -108,6 +114,32 @@ class GarbageCollectionSettings with ChangeNotifier {
 
     final settingsJsonString = jsonEncode(_settings.map((key, value) => MapEntry(key, value.toJson())));
     await prefs.setString('garbage_collection_settings', settingsJsonString);
+
+    await prefs.setBool('isNotificationEnabled', _isNotificationEnabled);
+    await prefs.setString('notificationTime', _notificationTime ?? '');
+    if (_minutesBeforeNotification != null) { // ★追加★
+      await prefs.setInt('minutesBeforeNotification', _minutesBeforeNotification!);
+    } else {
+      await prefs.remove('minutesBeforeNotification');
+    }
+  }
+
+  void setNotificationEnabled(bool value) {
+    _isNotificationEnabled = value;
+    saveSettings();
+    notifyListeners();
+  }
+
+  void setNotificationTime(String? time) {
+    _notificationTime = time;
+    saveSettings();
+    notifyListeners();
+  }
+
+  void setMinutesBeforeNotification(int? value) { // ★追加: setter★
+    _minutesBeforeNotification = value;
+    saveSettings();
+    notifyListeners();
   }
 
   void addGarbageType(GarbageType newType) {
