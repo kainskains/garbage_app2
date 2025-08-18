@@ -15,7 +15,6 @@ class ReminderSettingsScreen extends StatelessWidget {
       ),
       body: Consumer<GarbageCollectionSettings>(
         builder: (context, provider, child) {
-          // ゴミタイプのリストがまだロードされていない場合はローディング表示
           if (provider.garbageTypes.isEmpty) {
             return const Center(child: CircularProgressIndicator());
           }
@@ -37,7 +36,6 @@ class ReminderSettingsScreen extends StatelessWidget {
     );
   }
 
-  // 設定された頻度を決められた順序でソートして文字列リストを返すヘルパーメソッド
   String _getSortedFrequencyNames(Set<CollectionFrequency> frequencies, GarbageCollectionSettings provider) {
     final List<CollectionFrequency> sortedOrder = [
       CollectionFrequency.weekly,
@@ -56,7 +54,6 @@ class ReminderSettingsScreen extends StatelessWidget {
     return sortedNames.join(', ');
   }
 
-  // 各ゴミタイプのリマインダー設定項目
   Widget _buildGarbageTypeReminderSetting(BuildContext context, GarbageCollectionSettings provider, GarbageType type) {
     final CollectionRule currentRule = provider.settings[type.type] ?? CollectionRule.empty();
     final bool isWeeklySelected = currentRule.frequencies.contains(CollectionFrequency.weekly);
@@ -86,7 +83,6 @@ class ReminderSettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // 頻度選択
             ExpansionTile(
               title: Text('頻度: ${isRuleEmpty ? '設定しない' : _getSortedFrequencyNames(currentRule.frequencies, provider)}'),
               children: [
@@ -144,7 +140,6 @@ class ReminderSettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // 曜日選択
             ExpansionTile(
               title: Text('曜日: ${provider.getWeekdayNames(currentRule.weekdays)}'),
               children: [
@@ -168,7 +163,6 @@ class ReminderSettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
-            // 時間設定
             ListTile(
               title: const Text('収集時間'),
               subtitle: Text(currentRule.timeOfDay ?? '未設定'),
@@ -208,7 +202,6 @@ class ReminderSettingsScreen extends StatelessWidget {
     );
   }
 
-  // 新しいゴミタイプを追加するためのダイアログ
   void _showAddGarbageTypeDialog(BuildContext context) {
     final TextEditingController nameController = TextEditingController();
     showDialog(
@@ -230,11 +223,10 @@ class ReminderSettingsScreen extends StatelessWidget {
                 final String newName = nameController.text.trim();
                 if (newName.isNotEmpty) {
                   final provider = Provider.of<GarbageCollectionSettings>(context, listen: false);
-                  // 新しいゴミタイプを生成し、Providerに追加
                   final newType = GarbageType(
-                    type: newName.toLowerCase().replaceAll(' ', '_'), // ユニークなIDを生成
+                    type: newName.toLowerCase().replaceAll(' ', '_'),
                     name: newName,
-                    icon: Icons.auto_awesome, // 仮のアイコンを設定
+                    icon: Icons.auto_awesome,
                   );
                   provider.addGarbageType(newType);
                   Navigator.of(context).pop();

@@ -2,14 +2,11 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:flutter/services.dart' show rootBundle;
 import 'package:garbage_app/models/garbage_type.dart';
 
-// 既存の列挙型とヘルパークラス
 enum CollectionFrequency { weekly, firstWeek, secondWeek, thirdWeek, fourthWeek, fifthWeek, none }
 enum Weekday { none, sunday, monday, tuesday, wednesday, thursday, friday, saturday }
 
-/// ごみ収集のルールを定義するクラス
 class CollectionRule {
   Set<CollectionFrequency> frequencies;
   Set<Weekday> weekdays;
@@ -21,7 +18,6 @@ class CollectionRule {
     this.timeOfDay,
   });
 
-  // 空のルールを返すファクトリコンストラクタ
   factory CollectionRule.empty() {
     return CollectionRule(
       frequencies: {},
@@ -30,16 +26,14 @@ class CollectionRule {
     );
   }
 
-  // JSONからCollectionRuleオブジェクトを作成
   factory CollectionRule.fromJson(Map<String, dynamic> json) {
     return CollectionRule(
-      frequencies: (json['frequencies'] as List).map((e) => CollectionFrequency.values.firstWhere((f) => f.toString() == 'CollectionFrequency.$e')).toSet(),
-      weekdays: (json['weekdays'] as List).map((e) => Weekday.values.firstWhere((w) => w.toString() == 'Weekday.$e')).toSet(),
+      frequencies: (json['frequencies'] as List).map((e) => CollectionFrequency.values.firstWhere((f) => f.toString().split('.').last == e)).toSet(),
+      weekdays: (json['weekdays'] as List).map((e) => Weekday.values.firstWhere((w) => w.toString().split('.').last == e)).toSet(),
       timeOfDay: json['timeOfDay'] as String?,
     );
   }
 
-  // CollectionRuleオブジェクトをJSONに変換
   Map<String, dynamic> toJson() {
     return {
       'frequencies': frequencies.map((e) => e.toString().split('.').last).toList(),
@@ -48,7 +42,6 @@ class CollectionRule {
     };
   }
 
-  // copyWithヘルパーメソッドをCollectionRuleクラス内に追加
   CollectionRule copyWith({
     Set<CollectionFrequency>? frequencies,
     Set<Weekday>? weekdays,
@@ -70,40 +63,55 @@ class GarbageCollectionSettings with ChangeNotifier {
   List<GarbageType> get garbageTypes => _garbageTypes;
 
   GarbageCollectionSettings() {
-    loadGarbageTypes();
     loadSettings();
   }
 
-  Future<void> loadGarbageTypes() async {
-    try {
-      final String jsonString = await rootBundle.loadString('assets/garbage_types.json');
-      final List<dynamic> jsonList = jsonDecode(jsonString);
-      _garbageTypes = jsonList.map((json) => GarbageType.fromJson(json as Map<String, dynamic>)).toList();
-      notifyListeners();
-      print('ゴミタイプデータを読み込みました');
-    } catch (e) {
-      print('ゴミタイプデータの読み込みに失敗しました: $e');
-    }
-  }
-
+  // 設定とごみタイプの両方を読み込む
   Future<void> loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
+
+    // ごみタイプのリストを読み込む
+    final garbageTypesJsonString = prefs.getString('garbage_types');
+    if (garbageTypesJsonString != null) {
+      final List<dynamic> decodedList = jsonDecode(garbageTypesJsonString);
+      _garbageTypes = decodedList.map((json) => GarbageType.fromJson(json as Map<String, dynamic>)).toList();
+    } else {
+      // 保存されたデータがない場合は、デフォルトのごみタイプを初期化
+      _garbageTypes = [
+        GarbageType(type: 'burnable', name: '燃えるごみ', icon: Icons.local_fire_department),
+        GarbageType(type: 'non_burnable', name: '燃えないごみ', icon: Icons.delete_forever),
+        GarbageType(type: 'recyclable', name: '資源ごみ', icon: Icons.recycling),
+        GarbageType(type: 'plastic', name: 'プラスチック', icon: Icons.grass),
+        GarbageType(type: 'oversized', name: '粗大ごみ', icon: Icons.work),
+      ];
+    }
+
+    // ごみ収集ルールを読み込む
     final settingsJsonString = prefs.getString('garbage_collection_settings');
     if (settingsJsonString != null) {
       final Map<String, dynamic> decodedData = jsonDecode(settingsJsonString);
       _settings = decodedData.map((key, value) => MapEntry(key, CollectionRule.fromJson(value)));
-      notifyListeners();
+    } else {
+      // 永続化されたルールがない場合は、初期設定を作成
+      _settings = {for (var type in _garbageTypes) type.type: CollectionRule.empty()};
     }
+
+    notifyListeners();
   }
 
+  // 設定とごみタイプの両方を保存する
   Future<void> saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
+
+    final garbageTypesJsonString = jsonEncode(_garbageTypes.map((type) => type.toJson()).toList());
+    await prefs.setString('garbage_types', garbageTypesJsonString);
+
     final settingsJsonString = jsonEncode(_settings.map((key, value) => MapEntry(key, value.toJson())));
     await prefs.setString('garbage_collection_settings', settingsJsonString);
   }
 
   void addGarbageType(GarbageType newType) {
-    if (!_garbageTypes.any((type) => type.type == newType.type)) {
+    if (!garbageTypes.any((type) => type.type == newType.type)) {
       _garbageTypes.add(newType);
       _settings[newType.type] = CollectionRule.empty();
       saveSettings();
@@ -169,6 +177,11 @@ class GarbageCollectionSettings with ChangeNotifier {
   }
 
   Color getGarbageTypeColor(String typeId) {
+    final garbageType = _garbageTypes.firstWhere((type) => type.type == typeId, orElse: () => GarbageType(type: 'unknown', name: '不明なゴミ', icon: Icons.error));
+    if (garbageType.color != null) {
+      return Color(int.parse(garbageType.color!, radix: 16));
+    }
+
     final colors = {
       'burnable': Colors.red,
       'non_burnable': Colors.blue,
