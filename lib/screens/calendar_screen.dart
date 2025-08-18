@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:garbage_app/models/garbage_collection_settings.dart';
-import 'package:garbage_app/models/garbage_type.dart'; // GarbageTypeクラスをインポート
+import 'package:garbage_app/models/garbage_type.dart'; // ✅ この行が重要です。追加または存在を確認してください。
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -17,6 +17,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
   DateTime _focusedDay = DateTime.now();
   DateTime? _selectedDay;
 
+  // Weekday を正しく解決するために、_weekdayToDateTimeConstant の定義を修正
   final Map<Weekday, int> _weekdayToDateTimeConstant = {
     Weekday.monday: DateTime.monday,
     Weekday.tuesday: DateTime.tuesday,

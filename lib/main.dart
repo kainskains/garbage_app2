@@ -21,6 +21,9 @@ Future<void> main() async {
   // ✅ タイムゾーンの初期化を追加 (重要!)
   tz.initializeTimeZones();
 
+  // ✅ ローカルタイムゾーンを「アジア/東京」に設定
+  tz.setLocalLocation(tz.getLocation('Asia/Tokyo'));
+
   // Android向けの通知設定
   const AndroidInitializationSettings initializationSettingsAndroid =
   AndroidInitializationSettings('@mipmap/ic_launcher'); // アプリのアイコンを使用

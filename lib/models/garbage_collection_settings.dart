@@ -1,16 +1,14 @@
-// lib/models/garbage_collection_settings.dart
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
+import 'package:timezone/timezone.dart' as tz;
+// ✅ ここで models/garbage_type.dart をインポートします
 import 'package:garbage_app/models/garbage_type.dart';
-
-enum CollectionFrequency { weekly, firstWeek, secondWeek, thirdWeek, fourthWeek, fifthWeek, none }
-enum Weekday { none, sunday, monday, tuesday, wednesday, thursday, friday, saturday }
 
 class CollectionRule {
   Set<CollectionFrequency> frequencies;
   Set<Weekday> weekdays;
-  String? timeOfDay;
+  String? timeOfDay; // "HH:MM"形式
 
   CollectionRule({
     required this.frequencies,
@@ -19,18 +17,18 @@ class CollectionRule {
   });
 
   factory CollectionRule.empty() {
-    return CollectionRule(
-      frequencies: {},
-      weekdays: {},
-      timeOfDay: null,
-    );
+    return CollectionRule(frequencies: {}, weekdays: {}, timeOfDay: null);
   }
 
   factory CollectionRule.fromJson(Map<String, dynamic> json) {
     return CollectionRule(
-      frequencies: (json['frequencies'] as List).map((e) => CollectionFrequency.values.firstWhere((f) => f.toString().split('.').last == e)).toSet(),
-      weekdays: (json['weekdays'] as List).map((e) => Weekday.values.firstWhere((w) => w.toString().split('.').last == e)).toSet(),
-      timeOfDay: json['timeOfDay'] as String?,
+      frequencies: (json['frequencies'] as List<dynamic>?)
+          ?.map((e) => CollectionFrequency.values.firstWhere((element) => element.toString().split('.').last == e))
+          .toSet() ?? {},
+      weekdays: (json['weekdays'] as List<dynamic>?)
+          ?.map((e) => Weekday.values.firstWhere((element) => element.toString().split('.').last == e))
+          .toSet() ?? {},
+      timeOfDay: json['timeOfDay'],
     );
   }
 
@@ -55,20 +53,21 @@ class CollectionRule {
   }
 }
 
+
 class GarbageCollectionSettings with ChangeNotifier {
   Map<String, CollectionRule> _settings = {};
   List<GarbageType> _garbageTypes = [];
 
   bool _isNotificationEnabled = false;
   String? _notificationTime;
-  int? _minutesBeforeNotification; // ★追加: 通知までの分数★
+  int? _minutesBeforeNotification;
 
   Map<String, CollectionRule> get settings => _settings;
   List<GarbageType> get garbageTypes => _garbageTypes;
 
   bool get isNotificationEnabled => _isNotificationEnabled;
   String? get notificationTime => _notificationTime;
-  int? get minutesBeforeNotification => _minutesBeforeNotification; // ★追加: getter★
+  int? get minutesBeforeNotification => _minutesBeforeNotification;
 
   GarbageCollectionSettings() {
     loadSettings();
@@ -83,11 +82,11 @@ class GarbageCollectionSettings with ChangeNotifier {
       _garbageTypes = decodedList.map((json) => GarbageType.fromJson(json as Map<String, dynamic>)).toList();
     } else {
       _garbageTypes = [
-        GarbageType(type: 'burnable', name: '燃えるごみ', icon: Icons.local_fire_department),
-        GarbageType(type: 'non_burnable', name: '燃えないごみ', icon: Icons.delete_forever),
-        GarbageType(type: 'recyclable', name: '資源ごみ', icon: Icons.recycling),
-        GarbageType(type: 'plastic', name: 'プラスチック', icon: Icons.grass),
-        GarbageType(type: 'oversized', name: '粗大ごみ', icon: Icons.work),
+        GarbageType(type: 'burnable', name: '燃えるごみ', icon: Icons.local_fire_department, color: 'FFCDD2'),
+        GarbageType(type: 'non_burnable', name: '燃えないごみ', icon: Icons.delete_forever, color: 'BBDEFB'),
+        GarbageType(type: 'recyclable', name: '資源ごみ', icon: Icons.recycling, color: 'C8E6C9'),
+        GarbageType(type: 'plastic', name: 'プラスチック', icon: Icons.grass, color: 'FFF9C4'),
+        GarbageType(type: 'oversized', name: '粗大ごみ', icon: Icons.work, color: 'E1BEE7'),
       ];
     }
 
@@ -101,7 +100,7 @@ class GarbageCollectionSettings with ChangeNotifier {
 
     _isNotificationEnabled = prefs.getBool('isNotificationEnabled') ?? false;
     _notificationTime = prefs.getString('notificationTime');
-    _minutesBeforeNotification = prefs.getInt('minutesBeforeNotification'); // ★追加★
+    _minutesBeforeNotification = prefs.getInt('minutesBeforeNotification');
 
     notifyListeners();
   }
@@ -117,7 +116,7 @@ class GarbageCollectionSettings with ChangeNotifier {
 
     await prefs.setBool('isNotificationEnabled', _isNotificationEnabled);
     await prefs.setString('notificationTime', _notificationTime ?? '');
-    if (_minutesBeforeNotification != null) { // ★追加★
+    if (_minutesBeforeNotification != null) {
       await prefs.setInt('minutesBeforeNotification', _minutesBeforeNotification!);
     } else {
       await prefs.remove('minutesBeforeNotification');
@@ -136,7 +135,7 @@ class GarbageCollectionSettings with ChangeNotifier {
     notifyListeners();
   }
 
-  void setMinutesBeforeNotification(int? value) { // ★追加: setter★
+  void setMinutesBeforeNotification(int? value) {
     _minutesBeforeNotification = value;
     saveSettings();
     notifyListeners();
@@ -246,5 +245,84 @@ class GarbageCollectionSettings with ChangeNotifier {
     _settings[typeId] = _settings[typeId]!.copyWith(timeOfDay: time);
     saveSettings();
     notifyListeners();
+  }
+
+  DateTime? calculateNextCollectionDateTime(String typeId) {
+    final rule = _settings[typeId];
+    // ✅ デバッグ用: ルールが取得できているか確認
+    print('--- calculateNextCollectionDateTime for $typeId ---');
+    print('rule: $rule'); // ← ここに設定内容が表示されます
+
+    if (rule == null || rule.timeOfDay == null || rule.weekdays.isEmpty || rule.frequencies.isEmpty) {
+      // ✅ デバッグ用: nullが返される理由を確認
+      print('次の収集日時を計算できません：ルールが不完全です');
+      return null;
+    }
+
+    final int hour = int.parse(rule.timeOfDay!.split(':')[0]);
+    final int minute = int.parse(rule.timeOfDay!.split(':')[1]);
+
+    final now = tz.TZDateTime.now(tz.local);
+    DateTime? foundDateTime;
+
+    Weekday _getWeekdayEnumFromDart(int dartWeekday) {
+      switch (dartWeekday) {
+        case DateTime.monday: return Weekday.monday;
+        case DateTime.tuesday: return Weekday.tuesday;
+        case DateTime.wednesday: return Weekday.wednesday;
+        case DateTime.thursday: return Weekday.thursday;
+        case DateTime.friday: return Weekday.friday;
+        case DateTime.saturday: return Weekday.saturday;
+        case DateTime.sunday: return Weekday.sunday;
+        default: return Weekday.none;
+      }
+    }
+
+    for (int i = 0; i < 35; i++) {
+      final checkDate = now.add(Duration(days: i));
+      final currentWeekday = _getWeekdayEnumFromDart(checkDate.weekday);
+
+      if (rule.weekdays.contains(currentWeekday)) {
+        bool isFrequencyMatch = false;
+        if (rule.frequencies.contains(CollectionFrequency.weekly)) {
+          isFrequencyMatch = true;
+        } else {
+          final weekOfMonth = ((checkDate.day - 1) ~/ 7) + 1;
+
+          if ((weekOfMonth == 1 && rule.frequencies.contains(CollectionFrequency.firstWeek)) ||
+              (weekOfMonth == 2 && rule.frequencies.contains(CollectionFrequency.secondWeek)) ||
+              (weekOfMonth == 3 && rule.frequencies.contains(CollectionFrequency.thirdWeek)) ||
+              (weekOfMonth == 4 && rule.frequencies.contains(CollectionFrequency.fourthWeek)) ||
+              (weekOfMonth == 5 && rule.frequencies.contains(CollectionFrequency.fifthWeek))) {
+            isFrequencyMatch = true;
+          }
+        }
+
+        if (isFrequencyMatch) {
+          final candidateDateTime = tz.TZDateTime(
+            tz.local,
+            checkDate.year,
+            checkDate.month,
+            checkDate.day,
+            hour,
+            minute,
+          );
+
+          // ✅ デバッグ用: 候補日時が正しいか確認
+          print('候補日時: $candidateDateTime');
+          print('現在時刻: $now');
+
+          if (candidateDateTime.isAfter(now)) {
+            foundDateTime = candidateDateTime;
+            // ✅ デバッグ用: 次の収集日時が見つかったことを確認
+            print('次の収集日時を見つけました: $foundDateTime');
+            break;
+          }
+        }
+      }
+    }
+    // ✅ デバッグ用: 最終的な戻り値を確認
+    print('最終的な戻り値: $foundDateTime');
+    return foundDateTime;
   }
 }

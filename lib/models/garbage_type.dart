@@ -1,17 +1,20 @@
-// lib/models/garbage_type.dart
 import 'package:flutter/material.dart';
+
+// ✅ CollectionFrequencyとWeekdayのenumをここに集約します
+enum CollectionFrequency { weekly, firstWeek, secondWeek, thirdWeek, fourthWeek, fifthWeek, none }
+enum Weekday { none, sunday, monday, tuesday, wednesday, thursday, friday, saturday }
 
 class GarbageType {
   final String type;
   final String name;
   final IconData icon;
-  final String? color; // ★追加: 色の情報を保持するプロパティ★
+  final String? color;
 
   GarbageType({
     required this.type,
     required this.name,
     required this.icon,
-    this.color, // ★追加: コンストラクタに含める★
+    this.color,
   });
 
   factory GarbageType.fromJson(Map<String, dynamic> json) {
@@ -19,7 +22,7 @@ class GarbageType {
       type: json['type'] as String,
       name: json['name'] as String,
       icon: _getIconData(json['icon'] as String),
-      color: json['color'] as String?, // ★追加: JSONからcolorを読み込む★
+      color: json['color'] as String?,
     );
   }
 
@@ -28,7 +31,7 @@ class GarbageType {
       'type': type,
       'name': name,
       'icon': icon.codePoint.toString(),
-      'color': color, // ★追加: JSONにcolorを書き込む★
+      'color': color,
     };
   }
 
