@@ -1,8 +1,7 @@
-// lib/screens/settings_screen.dart (住所設定追加版)
+// lib/screens/settings_screen.dart
 import 'package:flutter/material.dart';
-import 'package:garbage_app/screens/date_settings_screen.dart'; // 日付設定画面
-import 'package:garbage_app/screens/time_settings_screen.dart'; // 時間設定画面
 import 'package:garbage_app/screens/address_settings_screen.dart'; // 住所設定画面
+import 'package:garbage_app/screens/reminder_settings_screen.dart'; // 新しく作成するリマインダー設定画面
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -42,53 +41,27 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
 
-          // ごみ収集日設定
+          // ごみ収集リマインダー設定 (統合された新しい項目)
           Card(
             margin: const EdgeInsets.symmetric(vertical: 8.0),
             child: ListTile(
               leading: const Icon(
-                Icons.calendar_today,
-                color: Colors.blue,
+                Icons.schedule, // 新しいアイコン
+                color: Colors.green, // 新しい色
                 size: 28,
               ),
               title: const Text(
-                'ごみ収集日設定',
+                'ごみ収集リマインダー設定',
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               subtitle: const Text(
-                'ごみの収集日を設定',
+                'ごみ収集日と時間をまとめて設定',
                 style: TextStyle(color: Colors.grey),
               ),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const DateSettingsScreen()),
-                );
-              },
-            ),
-          ),
-
-          // ごみ収集時間設定
-          Card(
-            margin: const EdgeInsets.symmetric(vertical: 8.0),
-            child: ListTile(
-              leading: const Icon(
-                Icons.access_time,
-                color: Colors.green,
-                size: 28,
-              ),
-              title: const Text(
-                'ごみ収集時間設定',
-                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-              ),
-              subtitle: const Text(
-                'ごみの収集時間を設定',
-                style: TextStyle(color: Colors.grey),
-              ),
-              trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const TimeSettingsScreen()),
+                  MaterialPageRoute(builder: (context) => const ReminderSettingsScreen()),
                 );
               },
             ),
