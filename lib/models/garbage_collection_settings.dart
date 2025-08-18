@@ -1,232 +1,205 @@
 // lib/models/garbage_collection_settings.dart
-import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'dart:convert';
-import 'package:flutter/material.dart';
-import 'package:collection/collection.dart'; // null-safe な collection を使用する場合
+import 'package:flutter/services.dart' show rootBundle;
+import 'package:garbage_app/models/garbage_type.dart';
 
-// ゴミのタイプを定義するEnum
-enum GarbageType {
-  burnable,   // 燃えるごみ
-  nonBurnable,// 燃えないごみ
-  plastic,    // プラスチック
-  paper,      // 紙
-  cardboard,  // 段ボール
-  bottlesCans,// びん・かん
-  petBottles, // ペットボトル
-  hazardous,  // 危険ごみ
-  recyclable, // 資源ごみ（その他）
-}
+// 既存の列挙型とヘルパークラス
+enum CollectionFrequency { weekly, firstWeek, secondWeek, thirdWeek, fourthWeek, fifthWeek, none }
+enum Weekday { none, sunday, monday, tuesday, wednesday, thursday, friday, saturday }
 
-// 収集曜日を定義するEnum
-enum Weekday {
-  none,       // 設定しない
-  monday,     // 月曜日
-  tuesday,    // 火曜日
-  wednesday,  // 水曜日
-  thursday,   // 木曜日
-  friday,     // 金曜日
-  saturday,   // 土曜日
-  sunday,     // 日曜日
-}
-
-// 収集頻度を定義するEnum
-enum CollectionFrequency {
-  weekly,       // 毎週
-  firstWeek,    // 第1週目
-  secondWeek,   // 第2週目
-  thirdWeek,    // 第3週目
-  fourthWeek,   // 第4週目
-  fifthWeek,    // 第5週目
-}
-
-// ごみ収集ルールを定義するクラス
+/// ごみ収集のルールを定義するクラス
 class CollectionRule {
-  final Set<CollectionFrequency> frequencies;
-  final Set<Weekday> weekdays;
-  final String? timeOfDay; // ★追加済み: 収集時間 (HH:MM形式) ★
+  Set<CollectionFrequency> frequencies;
+  Set<Weekday> weekdays;
+  String? timeOfDay;
 
   CollectionRule({
-    this.frequencies = const {},
-    this.weekdays = const {},
-    this.timeOfDay, // ★追加済み: コンストラクタ引数 ★
+    required this.frequencies,
+    required this.weekdays,
+    this.timeOfDay,
   });
 
   // 空のルールを返すファクトリコンストラクタ
   factory CollectionRule.empty() {
-    return CollectionRule(frequencies: {}, weekdays: {}, timeOfDay: null); // ★変更済み: timeOfDay を null に ★
+    return CollectionRule(
+      frequencies: {},
+      weekdays: {},
+      timeOfDay: null,
+    );
   }
 
-  // Firestoreに保存するためのマップに変換 (SharedPreferencesで使用)
-  Map<String, dynamic> toFirestore() {
+  // JSONからCollectionRuleオブジェクトを作成
+  factory CollectionRule.fromJson(Map<String, dynamic> json) {
+    return CollectionRule(
+      frequencies: (json['frequencies'] as List).map((e) => CollectionFrequency.values.firstWhere((f) => f.toString() == 'CollectionFrequency.$e')).toSet(),
+      weekdays: (json['weekdays'] as List).map((e) => Weekday.values.firstWhere((w) => w.toString() == 'Weekday.$e')).toSet(),
+      timeOfDay: json['timeOfDay'] as String?,
+    );
+  }
+
+  // CollectionRuleオブジェクトをJSONに変換
+  Map<String, dynamic> toJson() {
     return {
-      'frequencies': frequencies.map((f) => f.index).toList(),
-      'weekdays': weekdays.map((d) => d.index).toList(),
-      'timeOfDay': timeOfDay, // ★追加済み: timeOfDay をマップに含める ★
+      'frequencies': frequencies.map((e) => e.toString().split('.').last).toList(),
+      'weekdays': weekdays.map((e) => e.toString().split('.').last).toList(),
+      'timeOfDay': timeOfDay,
     };
   }
 
-  // Firestoreから読み込むためのファクトリコンストラクタ (SharedPreferencesで使用)
-  factory CollectionRule.fromFirestore(Map<String, dynamic> data) {
-    final List<dynamic>? freqIndices = data['frequencies'];
-    final List<dynamic>? weekdayIndices = data['weekdays'];
-    final String? time = data['timeOfDay']; // ★追加済み: timeOfDay を読み込む ★
-
+  // copyWithヘルパーメソッドをCollectionRuleクラス内に追加
+  CollectionRule copyWith({
+    Set<CollectionFrequency>? frequencies,
+    Set<Weekday>? weekdays,
+    String? timeOfDay,
+  }) {
     return CollectionRule(
-      frequencies: freqIndices != null
-          ? freqIndices.map((e) => CollectionFrequency.values[e as int]).toSet()
-          : {},
-      weekdays: weekdayIndices != null
-          ? weekdayIndices.map((e) => Weekday.values[e as int]).toSet()
-          : {},
-      timeOfDay: time, // ★追加済み: timeOfDay を設定 ★
+      frequencies: frequencies ?? this.frequencies,
+      weekdays: weekdays ?? this.weekdays,
+      timeOfDay: timeOfDay ?? this.timeOfDay,
     );
   }
 }
 
-// ごみ収集設定全体を管理するプロバイダークラス
 class GarbageCollectionSettings with ChangeNotifier {
-  Map<GarbageType, CollectionRule> _settings = {};
+  Map<String, CollectionRule> _settings = {};
+  List<GarbageType> _garbageTypes = [];
 
-  // コンストラクタで設定を非同期でロード
+  Map<String, CollectionRule> get settings => _settings;
+  List<GarbageType> get garbageTypes => _garbageTypes;
+
   GarbageCollectionSettings() {
-    _loadSettings();
+    loadGarbageTypes();
+    loadSettings();
   }
 
-  Map<GarbageType, CollectionRule> get settings => _settings;
-
-  Future<void> _loadSettings() async {
-    final prefs = await SharedPreferences.getInstance();
-    final String? settingsString = prefs.getString('garbage_collection_settings');
-
-    if (settingsString != null) {
-      final Map<String, dynamic> decodedData = json.decode(settingsString);
-      _settings = decodedData.map((key, value) {
-        final GarbageType type = GarbageType.values.firstWhere(
-              (e) => e.toString().split('.').last == key,
-          orElse: () => GarbageType.burnable, // Fallback (should not happen if saved correctly)
-        );
-        return MapEntry(type, CollectionRule.fromFirestore(value as Map<String, dynamic>));
-      });
-    } else {
-      // 初期設定: 全てのゴミタイプに対して空のルールを設定
-      for (var type in GarbageType.values) {
-        _settings[type] = CollectionRule.empty();
-      }
+  Future<void> loadGarbageTypes() async {
+    try {
+      final String jsonString = await rootBundle.loadString('assets/garbage_types.json');
+      final List<dynamic> jsonList = jsonDecode(jsonString);
+      _garbageTypes = jsonList.map((json) => GarbageType.fromJson(json as Map<String, dynamic>)).toList();
+      notifyListeners();
+      print('ゴミタイプデータを読み込みました');
+    } catch (e) {
+      print('ゴミタイプデータの読み込みに失敗しました: $e');
     }
-    notifyListeners();
+  }
+
+  Future<void> loadSettings() async {
+    final prefs = await SharedPreferences.getInstance();
+    final settingsJsonString = prefs.getString('garbage_collection_settings');
+    if (settingsJsonString != null) {
+      final Map<String, dynamic> decodedData = jsonDecode(settingsJsonString);
+      _settings = decodedData.map((key, value) => MapEntry(key, CollectionRule.fromJson(value)));
+      notifyListeners();
+    }
   }
 
   Future<void> saveSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final Map<String, dynamic> encodedData = _settings.map((key, value) {
-      return MapEntry(key.toString().split('.').last, value.toFirestore());
-    });
-    await prefs.setString('garbage_collection_settings', json.encode(encodedData));
+    final settingsJsonString = jsonEncode(_settings.map((key, value) => MapEntry(key, value.toJson())));
+    await prefs.setString('garbage_collection_settings', settingsJsonString);
   }
 
-  void updateCollectionRule(GarbageType type, CollectionRule newRule) {
-    _settings[type] = newRule;
+  void addGarbageType(GarbageType newType) {
+    if (!_garbageTypes.any((type) => type.type == newType.type)) {
+      _garbageTypes.add(newType);
+      _settings[newType.type] = CollectionRule.empty();
+      saveSettings();
+      notifyListeners();
+    }
+  }
+
+  void removeGarbageType(String typeId) {
+    _garbageTypes.removeWhere((type) => type.type == typeId);
+    _settings.remove(typeId);
     saveSettings();
     notifyListeners();
   }
 
-  void updateCollectionFrequencies(GarbageType type, Set<CollectionFrequency> newFrequencies) {
-    final currentRule = _settings[type] ?? CollectionRule.empty();
-    updateCollectionRule(type, CollectionRule(frequencies: newFrequencies, weekdays: currentRule.weekdays, timeOfDay: currentRule.timeOfDay)); // ★変更済み: timeOfDay を保持 ★
+  String getGarbageTypeName(String typeId) {
+    return _garbageTypes.firstWhere((type) => type.type == typeId, orElse: () => GarbageType(type: 'unknown', name: '不明なゴミ', icon: Icons.error)).name;
   }
 
-  void updateCollectionWeekdays(GarbageType type, Set<Weekday> newWeekdays) {
-    final currentRule = _settings[type] ?? CollectionRule.empty();
-    updateCollectionRule(type, CollectionRule(frequencies: currentRule.frequencies, weekdays: newWeekdays, timeOfDay: currentRule.timeOfDay)); // ★変更済み: timeOfDay を保持 ★
-  }
-
-  // ★追加済み: 収集時間を更新するメソッド ★
-  void updateCollectionTime(GarbageType type, String? newTime) {
-    final currentRule = _settings[type] ?? CollectionRule.empty();
-    updateCollectionRule(type, CollectionRule(frequencies: currentRule.frequencies, weekdays: currentRule.weekdays, timeOfDay: newTime));
-  }
-
-  // MARK: - Helper Methods for Displaying Names and Colors
-
-  // ゴミのタイプ名を返す
-  String getGarbageTypeName(GarbageType type) {
-    switch (type) {
-      case GarbageType.burnable: return '燃えるごみ';
-      case GarbageType.nonBurnable: return '燃えないごみ';
-      case GarbageType.plastic: return 'プラスチック';
-      case GarbageType.paper: return '紙';
-      case GarbageType.cardboard: return '段ボール';
-      case GarbageType.bottlesCans: return 'びん・かん';
-      case GarbageType.petBottles: return 'ペットボトル';
-      case GarbageType.hazardous: return '危険ごみ';
-      case GarbageType.recyclable: return '資源ごみ（その他）';
-    }
-  }
-
-  // ゴミのタイプに応じた色を返す
-  Color getGarbageTypeColor(GarbageType type) {
-    switch (type) {
-      case GarbageType.burnable: return Colors.red[700]!;
-      case GarbageType.nonBurnable: return Colors.blue[700]!;
-      case GarbageType.plastic: return Colors.orange[700]!;
-      case GarbageType.paper: return Colors.brown[700]!;
-      case GarbageType.cardboard: return Colors.grey[700]!;
-      case GarbageType.bottlesCans: return Colors.green[700]!;
-      case GarbageType.petBottles: return Colors.lightBlue[700]!;
-      case GarbageType.hazardous: return Colors.purple[700]!;
-      case GarbageType.recyclable: return Colors.teal[700]!;
-    }
-  }
-
-  // 収集頻度名を返す
   String getFrequencyName(CollectionFrequency frequency) {
     switch (frequency) {
-      case CollectionFrequency.weekly: return '毎週';
-      case CollectionFrequency.firstWeek: return '第1週目';
-      case CollectionFrequency.secondWeek: return '第2週目';
-      case CollectionFrequency.thirdWeek: return '第3週目';
-      case CollectionFrequency.fourthWeek: return '第4週目';
-      case CollectionFrequency.fifthWeek: return '第5週目';
+      case CollectionFrequency.weekly:
+        return '毎週';
+      case CollectionFrequency.firstWeek:
+        return '第1週';
+      case CollectionFrequency.secondWeek:
+        return '第2週';
+      case CollectionFrequency.thirdWeek:
+        return '第3週';
+      case CollectionFrequency.fourthWeek:
+        return '第4週';
+      case CollectionFrequency.fifthWeek:
+        return '第5週';
+      default:
+        return 'なし';
     }
   }
 
-  // 単一の曜日名を返す
   String getWeekdayName(Weekday weekday) {
     switch (weekday) {
-      case Weekday.none: return '設定しない';
-      case Weekday.monday: return '月曜日';
-      case Weekday.tuesday: return '火曜日';
-      case Weekday.wednesday: return '水曜日';
-      case Weekday.thursday: return '木曜日';
-      case Weekday.friday: return '金曜日';
-      case Weekday.saturday: return '土曜日';
-      case Weekday.sunday: return '日曜日';
+      case Weekday.sunday:
+        return '日曜日';
+      case Weekday.monday:
+        return '月曜日';
+      case Weekday.tuesday:
+        return '火曜日';
+      case Weekday.wednesday:
+        return '水曜日';
+      case Weekday.thursday:
+        return '木曜日';
+      case Weekday.friday:
+        return '金曜日';
+      case Weekday.saturday:
+        return '土曜日';
+      default:
+        return '未設定';
     }
   }
 
-  // 複数選択された曜日名を結合して表示するためのヘルパー
   String getWeekdayNames(Set<Weekday> weekdays) {
-    if (weekdays.isEmpty) {
-      return '未設定';
-    }
-    // 表示順を固定するためにソート
-    final List<Weekday> sortedOrder = [
-      Weekday.monday,
-      Weekday.tuesday,
-      Weekday.wednesday,
-      Weekday.thursday,
-      Weekday.friday,
-      Weekday.saturday,
-      Weekday.sunday,
-    ];
+    if (weekdays.isEmpty) return '未設定';
+    final sortedWeekdays = weekdays.toList()..sort((a, b) => a.index.compareTo(b.index));
+    return sortedWeekdays.map((e) => getWeekdayName(e).substring(0, 1)).join(', ');
+  }
 
-    final List<String> names = [];
-    for (var day in sortedOrder) {
-      if (weekdays.contains(day)) {
-        names.add(getWeekdayName(day));
-      }
-    }
-    return names.join(', ');
+  Color getGarbageTypeColor(String typeId) {
+    final colors = {
+      'burnable': Colors.red,
+      'non_burnable': Colors.blue,
+      'recyclable': Colors.green,
+      'plastic': Colors.orange,
+      'oversized': Colors.purple,
+    };
+    return colors[typeId] ?? Colors.grey;
+  }
+
+  void updateCollectionRule(String typeId, CollectionRule newRule) {
+    _settings[typeId] = newRule;
+    saveSettings();
+    notifyListeners();
+  }
+
+  void updateCollectionFrequencies(String typeId, Set<CollectionFrequency> frequencies) {
+    _settings[typeId] = _settings[typeId]!.copyWith(frequencies: frequencies);
+    saveSettings();
+    notifyListeners();
+  }
+
+  void updateCollectionWeekdays(String typeId, Set<Weekday> weekdays) {
+    _settings[typeId] = _settings[typeId]!.copyWith(weekdays: weekdays);
+    saveSettings();
+    notifyListeners();
+  }
+
+  void updateCollectionTime(String typeId, String? time) {
+    _settings[typeId] = _settings[typeId]!.copyWith(timeOfDay: time);
+    saveSettings();
+    notifyListeners();
   }
 }

@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:table_calendar/table_calendar.dart';
 import 'package:garbage_app/models/garbage_collection_settings.dart';
+import 'package:garbage_app/models/garbage_type.dart'; // GarbageTypeクラスをインポート
 
 class CalendarScreen extends StatefulWidget {
   const CalendarScreen({super.key});
@@ -29,16 +30,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
   @override
   void initState() {
     super.initState();
-    _selectedDay = _focusedDay; // 初期選択日を今日に設定
+    _selectedDay = _focusedDay;
   }
 
   @override
   Widget build(BuildContext context) {
     final settingsProvider = Provider.of<GarbageCollectionSettings>(context);
-
-    // 選択された日のイベントを計算
-    // ★変更済み: 戻り値をMapEntry<GarbageType, String?>に★
-    final List<MapEntry<GarbageType, String?>> selectedDayGarbageInfo = _getGarbageInfoForDay(settingsProvider, _selectedDay ?? _focusedDay);
+    final List<MapEntry<String, String?>> selectedDayGarbageInfo = _getGarbageInfoForDay(settingsProvider, _selectedDay ?? _focusedDay);
 
     return Scaffold(
       appBar: AppBar(
@@ -77,8 +75,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 },
                 calendarBuilders: CalendarBuilders(
                   markerBuilder: (context, day, events) {
-                    // ★変更済み: 戻り値をMapEntry<GarbageType, String?>に★
-                    final List<MapEntry<GarbageType, String?>> dayGarbageInfo = _getGarbageInfoForDay(settingsProvider, day);
+                    final List<MapEntry<String, String?>> dayGarbageInfo = _getGarbageInfoForDay(settingsProvider, day);
                     if (dayGarbageInfo.isNotEmpty) {
                       return Positioned(
                         right: 1,
@@ -93,8 +90,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ),
               ),
               const SizedBox(height: 20),
-              // 選択された日の詳細表示
-              // ★変更済み: 引数をMapEntry<GarbageType, String?>に★
               _buildSelectedDayEvents(settingsProvider, selectedDayGarbageInfo, _selectedDay ?? _focusedDay),
             ],
           ),
@@ -104,33 +99,27 @@ class _CalendarScreenState extends State<CalendarScreen> {
   }
 
   // 特定の日のゴミタイプと時間を取得するヘルパーメソッド
-  // ★変更済み: 戻り値をMapEntry<GarbageType, String?>に★
-  List<MapEntry<GarbageType, String?>> _getGarbageInfoForDay(GarbageCollectionSettings settingsProvider, DateTime day) {
-    List<MapEntry<GarbageType, String?>> info = [];
+  List<MapEntry<String, String?>> _getGarbageInfoForDay(GarbageCollectionSettings settingsProvider, DateTime day) {
+    List<MapEntry<String, String?>> info = [];
 
     if (day == null) {
       return info;
     }
 
-    settingsProvider.settings.forEach((type, rule) {
-      // ルールが未設定（頻度も曜日も空のSet）の場合はスキップ
+    settingsProvider.settings.forEach((typeId, rule) {
       if (rule.frequencies.isEmpty && rule.weekdays.isEmpty) {
         return;
       }
-      // 頻度が設定されていない、または曜日が未設定の場合はスキップ (部分的な設定ミス防止)
       if (rule.frequencies.isEmpty || rule.weekdays.isEmpty) {
         return;
       }
 
-      // 1. 設定された曜日とカレンダーの日の曜日が一致するか確認
       final currentDayWeekday = Weekday.values.firstWhere(
             (w) => _weekdayToDateTimeConstant[w] == day.weekday,
         orElse: () => Weekday.none,
       );
 
       if (rule.weekdays.contains(currentDayWeekday)) {
-        // 2. 曜日が一致した場合、さらに頻度をチェック
-
         final int weekOfMonth = ((day.day - 1) / 7).floor() + 1;
 
         bool matchesFrequency = false;
@@ -155,7 +144,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
         }
 
         if (matchesFrequency) {
-          info.add(MapEntry(type, rule.timeOfDay)); // ★変更済み: type と timeOfDay を MapEntry で追加 ★
+          info.add(MapEntry(typeId, rule.timeOfDay));
         }
       }
     });
@@ -170,14 +159,13 @@ class _CalendarScreenState extends State<CalendarScreen> {
         shape: BoxShape.circle,
         color: color,
       ),
-      width: 8.0, // 小さめのドット
+      width: 8.0,
       height: 8.0,
     );
   }
 
   // 選択された日のイベントを表示するウィジェット
-  // ★変更済み: 引数をList<MapEntry<GarbageType, String?>>に★
-  Widget _buildSelectedDayEvents(GarbageCollectionSettings settingsProvider, List<MapEntry<GarbageType, String?>> garbageInfo, DateTime day) {
+  Widget _buildSelectedDayEvents(GarbageCollectionSettings settingsProvider, List<MapEntry<String, String?>> garbageInfo, DateTime day) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -188,7 +176,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
           style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
         ),
         const SizedBox(height: 8),
-        // garbageInfo が空かどうかをチェック
         if (garbageInfo.isEmpty)
           Center(
             child: Text(
@@ -197,19 +184,18 @@ class _CalendarScreenState extends State<CalendarScreen> {
             ),
           )
         else
-        // garbageInfo リストを直接 map して、各要素 (entry: MapEntry<GarbageType, String?>) を使う
           ...garbageInfo.map((entry) {
-            final GarbageType type = entry.key;
-            final String? time = entry.value; // 時間を取得
+            final String typeId = entry.key;
+            final String? time = entry.value;
 
             return Padding(
               padding: const EdgeInsets.symmetric(vertical: 4.0, horizontal: 8.0),
               child: Row(
                 children: [
-                  Icon(Icons.circle, size: 10, color: settingsProvider.getGarbageTypeColor(type)),
+                  Icon(Icons.circle, size: 10, color: settingsProvider.getGarbageTypeColor(typeId)),
                   const SizedBox(width: 8),
                   Text(
-                    '${settingsProvider.getGarbageTypeName(type)} ${time != null ? '($time)' : ''}', // ★変更済み: 時間を表示 ★
+                    '${settingsProvider.getGarbageTypeName(typeId)} ${time != null ? '($time)' : ''}',
                     style: const TextStyle(fontSize: 16),
                   ),
                 ],
