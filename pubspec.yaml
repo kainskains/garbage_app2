@@ -24,6 +24,7 @@ dependencies:
   timezone: ^0.10.1
   mockito: ^5.0.0 # 最新版を指定
   build_runner: ^2.0.0 # 最新版を指定
+  flutter_launcher_icons: "^0.13.1"
 
 dev_dependencies:
   flutter_test:
@@ -40,3 +41,7 @@ flutter:
     - assets/labels.txt
     - assets/addresses.json
 
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/icon/icon.png" # あなたのアイコン画像へのパス
