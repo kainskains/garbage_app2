@@ -44,7 +44,7 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
 
   Future<void> _loadModel() async {
     try {
-      _interpreter = await Interpreter.fromAsset('assets/garbage_model.tflite');
+      _interpreter = await Interpreter.fromAsset('assets/garbage_model_2.tflite');
       print('Model loaded successfully.');
 
       String labelsData = await rootBundle.loadString('assets/labels.txt');
@@ -67,7 +67,7 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
       }
 
       setState(() {
-        _predictionResult = '分別するゴミの画像を選択してください。';
+        _predictionResult = 'ゴミの画像を選択してください。';
       });
 
     } catch (e) {
@@ -182,7 +182,7 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
       String predictedLabel = '不明';
       if (predictedIndex != -1 && _labels != null && predictedIndex < _labels!.length) {
         predictedLabel = _labels![predictedIndex];
-        resultText = '分類結果: $predictedLabel (信頼度: ${(maxProbability * 100).toStringAsFixed(2)}%)';
+        resultText = '分類結果: $predictedLabel ';
       } else {
         resultText = '分類結果を特定できませんでした。';
       }
