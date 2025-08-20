@@ -100,10 +100,6 @@ class _CalendarScreenState extends State<CalendarScreen> {
   List<MapEntry<String, String?>> _getGarbageInfoForDay(GarbageCollectionSettings settingsProvider, DateTime day) {
     List<MapEntry<String, String?>> info = [];
 
-    if (day == null) {
-      return info;
-    }
-
     settingsProvider.settings.forEach((typeId, rule) {
       if (rule.frequencies.isEmpty && rule.weekdays.isEmpty) {
         return;
@@ -199,7 +195,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
                 ],
               ),
             );
-          }).toList(),
+          }),
       ],
     );
   }

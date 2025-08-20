@@ -67,7 +67,7 @@ class _TrashRecognitionScreenState extends State<TrashRecognitionScreen> {
       }
 
       setState(() {
-        _predictionResult = 'モデル準備完了！画像をタップしてください。';
+        _predictionResult = '分別するゴミの画像を選択してください。';
       });
 
     } catch (e) {

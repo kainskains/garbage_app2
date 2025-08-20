@@ -236,9 +236,9 @@ class _AddressSettingsScreenState extends State<AddressSettingsScreen> {
                 borderRadius: BorderRadius.circular(8),
                 border: Border.all(color: Colors.blue.shade200),
               ),
-              child: Column(
+              child: const Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
-                children: const [
+                children: [
                   Row(
                     children: [
                       Icon(Icons.info_outline, color: Colors.blue),

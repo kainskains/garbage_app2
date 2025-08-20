@@ -22,37 +22,37 @@ class _MainScreenState extends State<MainScreen>
 
   // 各画面の設定データ
   final List<ScreenConfig> _screens = [
-    ScreenConfig(
+    const ScreenConfig(
       title: 'ごみ分別',
       icon: Icons.camera_alt,
       activeIcon: Icons.camera_alt_rounded,
       label: '分別',
       color: Colors.green,
-      gradient: const LinearGradient(
+      gradient: LinearGradient(
         colors: [Color(0xFF4CAF50), Color(0xFF8BC34A)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
     ),
-    ScreenConfig(
+    const ScreenConfig(
       title: 'カレンダー',
       icon: Icons.calendar_today,
       activeIcon: Icons.calendar_today_rounded,
       label: 'カレンダー',
       color: Colors.blue,
-      gradient: const LinearGradient(
+      gradient: LinearGradient(
         colors: [Color(0xFF2196F3), Color(0xFF03A9F4)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,
       ),
     ),
-    ScreenConfig(
+    const ScreenConfig(
       title: '設定',
       icon: Icons.settings,
       activeIcon: Icons.settings_rounded,
       label: '設定',
       color: Colors.orange,
-      gradient: const LinearGradient(
+      gradient: LinearGradient(
         colors: [Color(0xFFFF9800), Color(0xFFFFC107)],
         begin: Alignment.topLeft,
         end: Alignment.bottomRight,

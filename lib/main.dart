@@ -37,7 +37,7 @@ Future<void> main() async {
   );
 
   // 全プラットフォーム共通の初期化設定
-  final InitializationSettings initializationSettings = InitializationSettings(
+  const InitializationSettings initializationSettings = InitializationSettings(
     android: initializationSettingsAndroid,
     iOS: initializationSettingsDarwin,
   );

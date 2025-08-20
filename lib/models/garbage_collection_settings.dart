@@ -265,7 +265,7 @@ class GarbageCollectionSettings with ChangeNotifier {
     final now = tz.TZDateTime.now(tz.local);
     DateTime? foundDateTime;
 
-    Weekday _getWeekdayEnumFromDart(int dartWeekday) {
+    Weekday getWeekdayEnumFromDart(int dartWeekday) {
       switch (dartWeekday) {
         case DateTime.monday: return Weekday.monday;
         case DateTime.tuesday: return Weekday.tuesday;
@@ -280,7 +280,7 @@ class GarbageCollectionSettings with ChangeNotifier {
 
     for (int i = 0; i < 35; i++) {
       final checkDate = now.add(Duration(days: i));
-      final currentWeekday = _getWeekdayEnumFromDart(checkDate.weekday);
+      final currentWeekday = getWeekdayEnumFromDart(checkDate.weekday);
 
       if (rule.weekdays.contains(currentWeekday)) {
         bool isFrequencyMatch = false;

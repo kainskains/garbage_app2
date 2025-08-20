@@ -122,7 +122,7 @@ class ReminderSettingsScreen extends StatelessWidget {
                     },
                     enabled: !(isWeeklySelected && frequency != CollectionFrequency.weekly),
                   );
-                }).toList(),
+                }),
                 CheckboxListTile(
                   title: const Text('設定しない'),
                   value: isRuleEmpty,
@@ -158,7 +158,7 @@ class ReminderSettingsScreen extends StatelessWidget {
                       provider.updateCollectionWeekdays(type.type, newWeekdays);
                     },
                   );
-                }).toList(),
+                }),
               ],
             ),
             const SizedBox(height: 10),

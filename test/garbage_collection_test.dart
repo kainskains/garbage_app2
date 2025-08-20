@@ -24,7 +24,7 @@ void main() {
   group('GarbageCollectionSettings', () {
     test('「毎週月曜日、午前8時」の収集日時を正しく計算する', () {
       final settings = GarbageCollectionSettings();
-      final testTypeId = 'test_burnable';
+      const testTypeId = 'test_burnable';
 
       settings.addGarbageType(GarbageType(type: testTypeId, name: 'テストごみ', icon: Icons.local_fire_department));
       settings.updateCollectionRule(
@@ -48,7 +48,7 @@ void main() {
 
     test('「第2、4週の木曜日、午前7時30分」の収集日時を正しく計算する', () {
       final settings = GarbageCollectionSettings();
-      final testTypeId = 'test_recyclable';
+      const testTypeId = 'test_recyclable';
 
       settings.addGarbageType(GarbageType(type: testTypeId, name: 'テスト資源ごみ', icon: Icons.recycling));
       settings.updateCollectionRule(
@@ -72,7 +72,7 @@ void main() {
 
     test('ルールが不完全な場合にnullを返す', () {
       final settings = GarbageCollectionSettings();
-      final testTypeId = 'test_incomplete';
+      const testTypeId = 'test_incomplete';
 
       settings.addGarbageType(GarbageType(type: testTypeId, name: '不完全なごみ', icon: Icons.error));
       settings.updateCollectionRule(
