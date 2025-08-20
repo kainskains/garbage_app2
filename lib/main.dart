@@ -8,6 +8,7 @@ import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
 import 'package:timezone/timezone.dart' as tz;
 import 'package:garbage_app/services/address_service.dart'; // ✅ この行を追加
+import 'package:garbage_app/services/trash_recognition_service.dart'; // ✅ 追加
 
 final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
 FlutterLocalNotificationsPlugin();
@@ -49,7 +50,7 @@ Future<void> main() async {
 
   // AddressServiceが未定義であるエラーを修正
   await AddressService.loadAddresses();
-
+  await TrashRecognitionService.loadModel(); // ✅ この行を追加
   runApp(
     ChangeNotifierProvider(
       create: (context) => GarbageCollectionSettings(),
