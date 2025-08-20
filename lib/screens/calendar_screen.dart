@@ -40,10 +40,7 @@ class _CalendarScreenState extends State<CalendarScreen> {
     final List<MapEntry<String, String?>> selectedDayGarbageInfo = _getGarbageInfoForDay(settingsProvider, _selectedDay ?? _focusedDay);
 
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('ごみ収集カレンダー'),
-        backgroundColor: Colors.blueAccent,
-      ),
+
       body: SingleChildScrollView(
         child: Padding(
           padding: const EdgeInsets.all(16.0),

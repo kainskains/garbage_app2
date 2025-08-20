@@ -2,7 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:garbage_app/screens/address_settings_screen.dart';
 import 'package:garbage_app/screens/reminder_settings_screen.dart';
-import 'package:garbage_app/screens/notification_settings_screen.dart'; // ★追加: 通知設定画面をインポート
+import 'package:garbage_app/screens/notification_settings_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
   const SettingsScreen({super.key});
@@ -10,9 +10,7 @@ class SettingsScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('設定'),
-      ),
+
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
@@ -68,23 +66,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
 
-          const SizedBox(height: 32),
-
-          const Divider(thickness: 1),
-          const SizedBox(height: 16),
-
-          const Text(
-            'その他の設定',
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: FontWeight.bold,
-              color: Colors.grey,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          // ★変更: 通知設定画面への遷移を追加★
+          // 通知設定
           Card(
             margin: const EdgeInsets.symmetric(vertical: 8.0),
             child: ListTile(
@@ -103,7 +85,6 @@ class SettingsScreen extends StatelessWidget {
               ),
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
-                // 新しい通知設定画面へ遷移
                 Navigator.of(context).push(
                   MaterialPageRoute(builder: (context) => const NotificationSettingsScreen()),
                 );
@@ -111,6 +92,7 @@ class SettingsScreen extends StatelessWidget {
             ),
           ),
 
+          // アプリについて
           Card(
             margin: const EdgeInsets.symmetric(vertical: 8.0),
             child: ListTile(
