@@ -38,7 +38,7 @@ flutter:
   # アセット（画像、データファイルなど）のパスをここに指定します。
   # ディレクトリを指定する場合、パスの最後にスラッシュ（/）が必要です。
   assets:
-    - assets/garbage_model_3.tflite
+    - assets/garbage_model_4.tflite
     - assets/labels.txt
     - assets/addresses.json
 

@@ -19,7 +19,7 @@ class TrashRecognitionService {
   static Future<void> loadModel() async {
     if (_interpreter != null) return; // すでにロード済みなら何もしない
     try {
-      _interpreter = await Interpreter.fromAsset('assets/garbage_model_3.tflite');
+      _interpreter = await Interpreter.fromAsset('assets/garbage_model_4.tflite');
       final labelsData = await rootBundle.loadString('assets/labels.txt');
       _labels = labelsData.split('\n').where((label) => label.isNotEmpty).toList();
       debugPrint('モデルとラベルを読み込みました: ${_labels.length} ラベル');
@@ -95,15 +95,16 @@ class TrashRecognitionService {
   /// 認識結果とユーザーの住所に基づいてゴミサクのURLを生成する
   static Future<String> generateGomisukuUrl(String itemLabel) async {
     try {
+      final cleanedItemLabel = itemLabel.replaceAll(RegExp(r'<[^>]*>|[\n\r]'), '').trim();
       final prefs = await SharedPreferences.getInstance();
       final prefecture = prefs.getString('prefecture') ?? '';
       final city = prefs.getString('city') ?? '';
       final gomisakuId = AddressService.getGomisakuIdForCity(prefecture, city);
 
       if (gomisakuId != null) {
-        return '$_baseGomisukuUrl/$gomisakuId/?lang=ja#gomisaku_keyword:${Uri.encodeComponent(itemLabel)}';
+        return '$_baseGomisukuUrl/$gomisakuId/?lang=ja#gomisaku_keyword:${Uri.encodeComponent(cleanedItemLabel)}';
       } else {
-        return '$_baseGomisukuUrl/?search_region=${Uri.encodeComponent('$prefecture$city')}&search_word=${Uri.encodeComponent(itemLabel)}';
+        return '$_baseGomisukuUrl/?search_region=${Uri.encodeComponent('$prefecture$city')}&search_word=${Uri.encodeComponent(cleanedItemLabel)}';
       }
     } catch (e) {
       debugPrint('URL生成エラー: $e');
