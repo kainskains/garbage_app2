@@ -2,148 +2,195 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:garbage_app/models/garbage_collection_settings.dart';
-import 'package:flutter_local_notifications/flutter_local_notifications.dart'; // ★追加: 通知パッケージをインポート
+import 'package:garbage_app/services/notification_service.dart';
 
-class NotificationSettingsScreen extends StatelessWidget {
+class NotificationSettingsScreen extends StatefulWidget {
   const NotificationSettingsScreen({super.key});
 
-  // ★追加: テスト通知を送信する非同期関数
-  Future<void> _sendTestNotification(BuildContext context) async {
-    final FlutterLocalNotificationsPlugin flutterLocalNotificationsPlugin =
-    FlutterLocalNotificationsPlugin();
+  @override
+  State<NotificationSettingsScreen> createState() => _NotificationSettingsScreenState();
+}
 
-    const AndroidNotificationDetails androidPlatformChannelSpecifics =
-    AndroidNotificationDetails(
-      'test_channel_id',
-      'Test Notifications',
-      importance: Importance.max,
-      priority: Priority.high,
-      showWhen: false,
-    );
-    const NotificationDetails platformChannelSpecifics =
-    NotificationDetails(android: androidPlatformChannelSpecifics);
-
-    await flutterLocalNotificationsPlugin.show(
-      0, // 通知ID
-      'テスト通知',
-      'これはテスト通知です。',
-      platformChannelSpecifics,
-      payload: 'item x',
-    );
-  }
+class _NotificationSettingsScreenState extends State<NotificationSettingsScreen> {
+  final List<int> _notificationMinutes = [5, 10, 15, 30, 60, 120];
 
   @override
   Widget build(BuildContext context) {
-    final settingsProvider = Provider.of<GarbageCollectionSettings>(context);
-    final List<int> minutesOptions = [1, 5, 10, 15, 30, 60, 120];
-
     return Scaffold(
       appBar: AppBar(
         title: const Text('通知設定'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                const Text(
-                  '通知を有効にする',
-                  style: TextStyle(fontSize: 18),
+      body: Consumer<GarbageCollectionSettings>(
+        builder: (context, provider, child) {
+          return ListView(
+            padding: const EdgeInsets.all(16.0),
+            children: [
+              // 通知の有効/無効切り替え
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(16.0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        '通知の設定',
+                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 10),
+                      SwitchListTile(
+                        title: const Text('通知を有効にする'),
+                        subtitle: const Text('ゴミ収集日の前に通知を送信します'),
+                        value: provider.isNotificationEnabled,
+                        onChanged: (bool value) async {
+                          provider.setNotificationEnabled(value);
+
+                          if (value) {
+                            // 通知許可をリクエスト
+                            final notificationService = NotificationService();
+                            await notificationService.requestPermissions();
+                            // 通知をスケジュール
+                            await notificationService.scheduleAllNotifications();
+                          } else {
+                            // 全ての通知をキャンセル
+                            final notificationService = NotificationService();
+                            await notificationService.cancelAllNotifications();
+                          }
+                        },
+                      ),
+                    ],
+                  ),
                 ),
-                Switch(
-                  value: settingsProvider.isNotificationEnabled,
-                  onChanged: (bool newValue) {
-                    settingsProvider.setNotificationEnabled(newValue);
-                  },
+              ),
+
+              if (provider.isNotificationEnabled) ...[
+                const SizedBox(height: 16),
+
+                // 通知タイミング設定
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '通知タイミング',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        const Text(
+                          'ゴミ収集時間の何分前に通知しますか？',
+                          style: TextStyle(fontSize: 14, color: Colors.grey),
+                        ),
+                        const SizedBox(height: 10),
+                        ..._notificationMinutes.map((minutes) {
+                          return RadioListTile<int>(
+                            title: Text('$minutes分前'),
+                            value: minutes,
+                            groupValue: provider.minutesBeforeNotification,
+                            onChanged: (int? value) async {
+                              if (value != null) {
+                                provider.setMinutesBeforeNotification(value);
+                                // 通知を再スケジュール
+                                final notificationService = NotificationService();
+                                await notificationService.scheduleAllNotifications();
+                              }
+                            },
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // 次回の通知予定表示
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          '次回の通知予定',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        ...provider.garbageTypes.map((type) {
+                          final nextCollection = provider.calculateNextCollectionDateTime(type.type);
+                          if (nextCollection == null) {
+                            return ListTile(
+                              leading: Icon(type.icon, color: provider.getGarbageTypeColor(type.type)),
+                              title: Text(type.name),
+                              subtitle: const Text('収集日が設定されていません'),
+                            );
+                          }
+
+                          final notificationTime = provider.minutesBeforeNotification != null
+                              ? nextCollection.subtract(Duration(minutes: provider.minutesBeforeNotification!))
+                              : null;
+
+                          return ListTile(
+                            leading: Icon(type.icon, color: provider.getGarbageTypeColor(type.type)),
+                            title: Text(type.name),
+                            subtitle: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('収集日: ${_formatDateTime(nextCollection)}'),
+                                if (notificationTime != null)
+                                  Text('通知: ${_formatDateTime(notificationTime)}'),
+                              ],
+                            ),
+                          );
+                        }),
+                      ],
+                    ),
+                  ),
+                ),
+
+                const SizedBox(height: 16),
+
+                // テスト通知ボタン
+                Card(
+                  child: Padding(
+                    padding: const EdgeInsets.all(16.0),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'テスト',
+                          style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                        ),
+                        const SizedBox(height: 10),
+                        SizedBox(
+                          width: double.infinity,
+                          child: ElevatedButton(
+                            onPressed: () async {
+                              final notificationService = NotificationService();
+                              await notificationService.showTestNotification();
+
+                              if (context.mounted) {
+                                ScaffoldMessenger.of(context).showSnackBar(
+                                  const SnackBar(content: Text('テスト通知を送信しました')),
+                                );
+                              }
+                            },
+                            child: const Text('テスト通知を送信'),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
               ],
-            ),
-            const SizedBox(height: 20),
-            ListTile(
-              title: const Text('通知時間'),
-              subtitle: Text(
-                settingsProvider.notificationTime ?? '未設定',
-                style: TextStyle(
-                  color: settingsProvider.isNotificationEnabled ? null : Colors.grey,
-                ),
-              ),
-              trailing: settingsProvider.notificationTime != null
-                  ? IconButton(
-                icon: const Icon(Icons.clear),
-                onPressed: settingsProvider.isNotificationEnabled
-                    ? () {
-                  settingsProvider.setNotificationTime(null);
-                }
-                    : null,
-              )
-                  : null,
-              onTap: settingsProvider.isNotificationEnabled
-                  ? () async {
-                final TimeOfDay? pickedTime = await showTimePicker(
-                  context: context,
-                  initialTime: settingsProvider.notificationTime != null
-                      ? TimeOfDay(
-                    hour: int.parse(settingsProvider.notificationTime!.split(':')[0]),
-                    minute: int.parse(settingsProvider.notificationTime!.split(':')[1]),
-                  )
-                      : TimeOfDay.now(),
-                );
-                if (pickedTime != null) {
-                  final String formattedTime =
-                      '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}';
-                  settingsProvider.setNotificationTime(formattedTime);
-                }
-              }
-                  : null,
-            ),
-
-            ListTile(
-              title: const Text('何分前に通知'),
-              subtitle: Text(
-                settingsProvider.minutesBeforeNotification != null
-                    ? '${settingsProvider.minutesBeforeNotification}分前'
-                    : '未設定',
-                style: TextStyle(
-                  color: settingsProvider.isNotificationEnabled ? null : Colors.grey,
-                ),
-              ),
-              trailing: settingsProvider.isNotificationEnabled
-                  ? DropdownButton<int>(
-                value: settingsProvider.minutesBeforeNotification,
-                hint: const Text('選択'),
-                onChanged: (int? newValue) {
-                  settingsProvider.setMinutesBeforeNotification(newValue);
-                },
-                items: minutesOptions.map((int value) {
-                  return DropdownMenuItem<int>(
-                    value: value,
-                    child: Text('$value分前'),
-                  );
-                }).toList(),
-              )
-                  : null,
-            ),
-
-            const SizedBox(height: 40),
-
-            // ★追加: 通知テスト用のボタン
-            ElevatedButton(
-              onPressed: () {
-                _sendTestNotification(context);
-                ScaffoldMessenger.of(context).showSnackBar(
-                  const SnackBar(
-                    content: Text('テスト通知が送信されました。'),
-                  ),
-                );
-              },
-              child: const Text('通知を今すぐテスト'),
-            ),
-          ],
-        ),
+            ],
+          );
+        },
       ),
     );
+  }
+
+  String _formatDateTime(DateTime dateTime) {
+    return '${dateTime.month}/${dateTime.day} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}';
   }
 }
