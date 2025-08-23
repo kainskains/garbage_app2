@@ -6,7 +6,6 @@ import 'package:garbage_app/screens/main_screen.dart';
 import 'package:garbage_app/models/garbage_collection_settings.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/data/latest.dart' as tz;
-import 'package:timezone/timezone.dart' as tz;
 import 'package:garbage_app/services/address_service.dart'; // ✅ この行を追加
 import 'package:garbage_app/services/trash_recognition_service.dart'; // ✅ 追加
 
