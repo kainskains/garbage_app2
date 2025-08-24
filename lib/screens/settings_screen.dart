@@ -3,14 +3,24 @@ import 'package:flutter/material.dart';
 import 'package:garbage_app/screens/address_settings_screen.dart';
 import 'package:garbage_app/screens/reminder_settings_screen.dart';
 import 'package:garbage_app/screens/notification_settings_screen.dart';
+import 'package:garbage_app/models/garbage_collection_settings.dart';
+import 'package:provider/provider.dart';
+import 'package:garbage_app/services/notification_service.dart';
 
-class SettingsScreen extends StatelessWidget {
+class SettingsScreen extends StatefulWidget {
   const SettingsScreen({super.key});
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
+  State<SettingsScreen> createState() => _SettingsScreenState();
+}
 
+class _SettingsScreenState extends State<SettingsScreen> {
+  @override
+  Widget build(BuildContext context) {
+    final settingsProvider =
+    Provider.of<GarbageCollectionSettings>(context, listen: false);
+
+    return Scaffold(
       body: ListView(
         padding: const EdgeInsets.all(16.0),
         children: [
@@ -34,7 +44,9 @@ class SettingsScreen extends StatelessWidget {
               trailing: const Icon(Icons.arrow_forward_ios),
               onTap: () {
                 Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const AddressSettingsScreen()),
+                  MaterialPageRoute(
+                    builder: (context) => const AddressSettingsScreen(),
+                  ),
                 );
               },
             ),
@@ -58,10 +70,15 @@ class SettingsScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey),
               ),
               trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const ReminderSettingsScreen()),
+              onTap: () async {
+                // 設定画面から戻ったときに通知を再スケジュール
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ReminderSettingsScreen(),
+                  ),
                 );
+                // 設定を保存した後に通知を再スケジュール
+                await NotificationService().rescheduleNotifications(settingsProvider);
               },
             ),
           ),
@@ -84,10 +101,14 @@ class SettingsScreen extends StatelessWidget {
                 style: TextStyle(color: Colors.grey),
               ),
               trailing: const Icon(Icons.arrow_forward_ios),
-              onTap: () {
-                Navigator.of(context).push(
-                  MaterialPageRoute(builder: (context) => const NotificationSettingsScreen()),
+              onTap: () async {
+                await Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const NotificationSettingsScreen(),
+                  ),
                 );
+                // 通知設定を変更した直後に再スケジュール
+                await NotificationService().rescheduleNotifications(settingsProvider);
               },
             ),
           ),
@@ -117,7 +138,8 @@ class SettingsScreen extends StatelessWidget {
                   applicationVersion: '1.0.0',
                   applicationLegalese: '© 2024 Your Company',
                   children: const [
-                    Text('このアプリは地域のごみ収集情報を管理するためのアプリです。'),
+                    Text(
+                        'このアプリは地域のごみ収集情報を管理するためのアプリです。'),
                   ],
                 );
               },

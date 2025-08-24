@@ -1,12 +1,11 @@
 // lib/services/notification_service.dart
+
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:timezone/timezone.dart' as tz;
 import 'package:garbage_app/models/garbage_collection_settings.dart';
 import 'package:provider/provider.dart';
-
-// グローバルナビゲーターキーへの参照用
-late GlobalKey<NavigatorState> _navigatorKey;
 
 class NotificationService {
   static final NotificationService _instance = NotificationService._internal();
@@ -16,15 +15,14 @@ class NotificationService {
   final FlutterLocalNotificationsPlugin _flutterLocalNotificationsPlugin =
   FlutterLocalNotificationsPlugin();
 
-  // ナビゲーターキーを設定
+  static late GlobalKey<NavigatorState> _navigatorKey;
   static void setNavigatorKey(GlobalKey<NavigatorState> key) {
     _navigatorKey = key;
   }
 
-  // 初期化
   Future<void> initialize() async {
     const AndroidInitializationSettings initializationSettingsAndroid =
-    AndroidInitializationSettings('@mipmap/launcher_icon');
+    AndroidInitializationSettings('@mipmap/ic_launcher');
 
     const DarwinInitializationSettings initializationSettingsDarwin =
     DarwinInitializationSettings(
@@ -47,59 +45,64 @@ class NotificationService {
     );
   }
 
-  // 通知権限のリクエスト
   Future<bool> requestPermissions() async {
-    // Android 13+ 用の権限リクエスト
-    if (Theme.of(_navigatorKey.currentContext!).platform == TargetPlatform.android) {
-      final AndroidFlutterLocalNotificationsPlugin? androidImplementation =
+    if (defaultTargetPlatform == TargetPlatform.android) {
+      final androidImplementation =
       _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
           AndroidFlutterLocalNotificationsPlugin>();
 
       if (androidImplementation != null) {
         try {
-          final bool? granted = await androidImplementation.requestNotificationsPermission();
+          final bool? granted =
+          await androidImplementation.requestNotificationsPermission();
           debugPrint('Android notification permission: $granted');
           return granted ?? false;
         } catch (e) {
           debugPrint('Error requesting Android notification permission: $e');
-          return true; // フォールバック
+          return true;
         }
       }
     }
 
-    // iOS用の権限リクエスト - DarwinFlutterLocalNotificationsPlugin → IOSFlutterLocalNotificationsPlugin
-    final IOSFlutterLocalNotificationsPlugin? iosImplementation =
-    _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
-        IOSFlutterLocalNotificationsPlugin>();
+    if (defaultTargetPlatform == TargetPlatform.iOS) {
+      final iosImplementation =
+      _flutterLocalNotificationsPlugin.resolvePlatformSpecificImplementation<
+          IOSFlutterLocalNotificationsPlugin>();
 
-    if (iosImplementation != null) {
-      try {
-        final bool? granted = await iosImplementation.requestPermissions(
-          alert: true,
-          badge: true,
-          sound: true,
-        );
-        debugPrint('iOS notification permission: $granted');
-        return granted ?? false;
-      } catch (e) {
-        debugPrint('Error requesting iOS notification permission: $e');
-        return true; // フォールバック
+      if (iosImplementation != null) {
+        try {
+          final bool? granted = await iosImplementation.requestPermissions(
+            alert: true,
+            badge: true,
+            sound: true,
+          );
+          debugPrint('iOS notification permission: $granted');
+          return granted ?? false;
+        } catch (e) {
+          debugPrint('Error requesting iOS notification permission: $e');
+          return true;
+        }
       }
     }
 
     return true;
   }
 
-  // 通知をスケジュール
   Future<void> _scheduleNotificationForType(
       GarbageCollectionSettings provider, String typeId) async {
     final nextCollection = provider.calculateNextCollectionDateTime(typeId);
     if (nextCollection == null) return;
 
+    // 通知時間を JST に合わせる
     final notificationTime = nextCollection.subtract(
-        Duration(minutes: provider.minutesBeforeNotification!));
+      Duration(minutes: provider.minutesBeforeNotification ?? 0),
+    );
 
-    if (notificationTime.isBefore(DateTime.now())) return;
+    final now = tz.TZDateTime.now(tz.local);
+    if (notificationTime.isBefore(now)) {
+      debugPrint('Notification time is in the past, skipping...');
+      return;
+    }
 
     final garbageTypeName = provider.getGarbageTypeName(typeId);
     final collectionTimeStr =
@@ -110,7 +113,7 @@ class NotificationService {
         typeId.hashCode,
         'ゴミ収集のお知らせ',
         '$garbageTypeName の収集時間（$collectionTimeStr）が近づいています',
-        tz.TZDateTime.from(notificationTime, tz.local),
+        notificationTime,
         const NotificationDetails(
           android: AndroidNotificationDetails(
             'garbage_collection',
@@ -128,37 +131,41 @@ class NotificationService {
         payload: typeId,
         uiLocalNotificationDateInterpretation:
         UILocalNotificationDateInterpretation.absoluteTime,
+        androidAllowWhileIdle: true,
       );
 
-      debugPrint('Scheduled notification for $garbageTypeName at $notificationTime');
+      // JSTでの表示に修正
+      final jstTime = tz.TZDateTime.from(notificationTime, tz.local);
+      debugPrint('Scheduled notification for $garbageTypeName at $jstTime (JST)');
     } catch (e) {
       debugPrint('Error scheduling notification for $typeId: $e');
     }
   }
 
-  // 全ての通知をスケジュール
-  Future<void> scheduleAllNotifications() async {
+  Future<void> scheduleAllNotifications([GarbageCollectionSettings? provider]) async {
     try {
+      final context = _navigatorKey.currentContext;
+      final settingsProvider = provider ??
+          (context != null
+              ? Provider.of<GarbageCollectionSettings>(context, listen: false)
+              : null);
+      if (settingsProvider == null) return;
+
       await cancelAllNotifications();
 
-      final context = _navigatorKey.currentContext;
-      if (context == null) return;
-
-      final provider = Provider.of<GarbageCollectionSettings>(context, listen: false);
-
-      if (!provider.isNotificationEnabled || provider.minutesBeforeNotification == null) {
+      if (!settingsProvider.isNotificationEnabled ||
+          settingsProvider.minutesBeforeNotification == null) {
         return;
       }
 
-      for (final garbageType in provider.garbageTypes) {
-        await _scheduleNotificationForType(provider, garbageType.type);
+      for (final garbageType in settingsProvider.garbageTypes) {
+        await _scheduleNotificationForType(settingsProvider, garbageType.type);
       }
     } catch (e) {
       debugPrint('Error scheduling all notifications: $e');
     }
   }
 
-  // 全ての通知をキャンセル
   Future<void> cancelAllNotifications() async {
     try {
       await _flutterLocalNotificationsPlugin.cancelAll();
@@ -168,7 +175,6 @@ class NotificationService {
     }
   }
 
-  // 特定のゴミタイプの通知をキャンセル
   Future<void> cancelNotificationForType(String typeId) async {
     try {
       await _flutterLocalNotificationsPlugin.cancel(typeId.hashCode);
@@ -178,7 +184,6 @@ class NotificationService {
     }
   }
 
-  // テスト通知を表示
   Future<void> showTestNotification() async {
     try {
       await _flutterLocalNotificationsPlugin.show(
@@ -205,65 +210,8 @@ class NotificationService {
     }
   }
 
-  // 今日の通知対象を取得
-  Future<List<String>> getTodayNotifications() async {
-    try {
-      final context = _navigatorKey.currentContext;
-      if (context == null) return [];
-
-      final provider = Provider.of<GarbageCollectionSettings>(context, listen: false);
-      final today = DateTime.now();
-      final todayNotifications = <String>[];
-
-      for (final garbageType in provider.garbageTypes) {
-        final nextCollection = provider.calculateNextCollectionDateTime(garbageType.type);
-        if (nextCollection != null &&
-            nextCollection.year == today.year &&
-            nextCollection.month == today.month &&
-            nextCollection.day == today.day) {
-          todayNotifications.add(garbageType.name);
-        }
-      }
-
-      return todayNotifications;
-    } catch (e) {
-      debugPrint('Error getting today notifications: $e');
-      return [];
-    }
-  }
-
-  // 明日の通知対象を取得
-  Future<List<String>> getTomorrowNotifications() async {
-    try {
-      final context = _navigatorKey.currentContext;
-      if (context == null) return [];
-
-      final provider = Provider.of<GarbageCollectionSettings>(context, listen: false);
-      final tomorrow = DateTime.now().add(const Duration(days: 1));
-      final tomorrowNotifications = <String>[];
-
-      for (final garbageType in provider.garbageTypes) {
-        final nextCollection = provider.calculateNextCollectionDateTime(garbageType.type);
-        if (nextCollection != null &&
-            nextCollection.year == tomorrow.year &&
-            nextCollection.month == tomorrow.month &&
-            nextCollection.day == tomorrow.day) {
-          tomorrowNotifications.add(garbageType.name);
-        }
-      }
-
-      return tomorrowNotifications;
-    } catch (e) {
-      debugPrint('Error getting tomorrow notifications: $e');
-      return [];
-    }
-  }
-
-  // 定期的な通知の再スケジュール
-  Future<void> rescheduleNotifications() async {
+  Future<void> rescheduleNotifications([GarbageCollectionSettings? provider]) async {
     debugPrint('Rescheduling notifications...');
-    await scheduleAllNotifications();
+    await scheduleAllNotifications(provider);
   }
 }
-
-// グローバルナビゲーターキーはmain.dartで定義され、setNavigatorKeyで設定されます

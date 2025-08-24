@@ -15,19 +15,33 @@ class ReminderSettingsScreen extends StatelessWidget {
       ),
       body: Consumer<GarbageCollectionSettings>(
         builder: (context, provider, child) {
+          // ゴミ種類が空の場合
           if (provider.garbageTypes.isEmpty) {
-            return const Center(
+            return Center(
               child: Padding(
-                padding: EdgeInsets.all(20.0),
-                child: Text(
-                  'まだゴミの種類が追加されていません。\n右下のボタンから新しいゴミを追加してください。',
-                  textAlign: TextAlign.center,
-                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                padding: const EdgeInsets.all(20.0),
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    const Text(
+                      'まだゴミの種類が追加されていません。\n右下のボタンから新しいゴミを追加してください。',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: Colors.grey),
+                    ),
+                    const SizedBox(height: 20),
+                    ElevatedButton(
+                      onPressed: () {
+                        provider.resetGarbageTypes(); // 初期ゴミリストに戻す
+                      },
+                      child: const Text('初期項目に戻す'),
+                    ),
+                  ],
                 ),
               ),
             );
           }
 
+          // ゴミ種類が存在する場合のリスト表示
           return ListView.builder(
             padding: const EdgeInsets.all(16.0),
             itemCount: provider.garbageTypes.length,
@@ -45,7 +59,8 @@ class ReminderSettingsScreen extends StatelessWidget {
     );
   }
 
-  String _getSortedFrequencyNames(Set<CollectionFrequency> frequencies, GarbageCollectionSettings provider) {
+  String _getSortedFrequencyNames(
+      Set<CollectionFrequency> frequencies, GarbageCollectionSettings provider) {
     final List<CollectionFrequency> sortedOrder = [
       CollectionFrequency.weekly,
       CollectionFrequency.firstWeek,
@@ -63,10 +78,14 @@ class ReminderSettingsScreen extends StatelessWidget {
     return sortedNames.join(', ');
   }
 
-  Widget _buildGarbageTypeReminderSetting(BuildContext context, GarbageCollectionSettings provider, GarbageType type) {
-    final CollectionRule currentRule = provider.settings[type.type] ?? CollectionRule.empty();
-    final bool isWeeklySelected = currentRule.frequencies.contains(CollectionFrequency.weekly);
-    final bool isRuleEmpty = currentRule.frequencies.isEmpty && currentRule.weekdays.isEmpty;
+  Widget _buildGarbageTypeReminderSetting(
+      BuildContext context, GarbageCollectionSettings provider, GarbageType type) {
+    final CollectionRule currentRule =
+        provider.settings[type.type] ?? CollectionRule.empty();
+    final bool isWeeklySelected =
+    currentRule.frequencies.contains(CollectionFrequency.weekly);
+    final bool isRuleEmpty =
+        currentRule.frequencies.isEmpty && currentRule.weekdays.isEmpty;
 
     return Card(
       margin: const EdgeInsets.symmetric(vertical: 8.0),
@@ -75,12 +94,14 @@ class ReminderSettingsScreen extends StatelessWidget {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // タイトル + 削除ボタン
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(
                   type.name,
-                  style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                  style: const TextStyle(
+                      fontSize: 18, fontWeight: FontWeight.bold),
                 ),
                 IconButton(
                   icon: const Icon(Icons.delete, color: Colors.red),
@@ -92,8 +113,10 @@ class ReminderSettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
+            // 頻度設定
             ExpansionTile(
-              title: Text('頻度: ${isRuleEmpty ? '設定しない' : _getSortedFrequencyNames(currentRule.frequencies, provider)}'),
+              title: Text(
+                  '頻度: ${isRuleEmpty ? '設定しない' : _getSortedFrequencyNames(currentRule.frequencies, provider)}'),
               children: [
                 ...[
                   CollectionFrequency.weekly,
@@ -108,7 +131,8 @@ class ReminderSettingsScreen extends StatelessWidget {
                     value: currentRule.frequencies.contains(frequency),
                     onChanged: (bool? newValue) {
                       if (newValue == null) return;
-                      final Set<CollectionFrequency> newFrequencies = Set.from(currentRule.frequencies);
+                      final Set<CollectionFrequency> newFrequencies =
+                      Set.from(currentRule.frequencies);
 
                       if (frequency == CollectionFrequency.weekly) {
                         if (newValue) {
@@ -118,9 +142,7 @@ class ReminderSettingsScreen extends StatelessWidget {
                           newFrequencies.remove(CollectionFrequency.weekly);
                         }
                       } else {
-                        if (isWeeklySelected) {
-                          return;
-                        }
+                        if (isWeeklySelected) return;
                         if (newValue) {
                           newFrequencies.add(frequency);
                         } else {
@@ -129,7 +151,8 @@ class ReminderSettingsScreen extends StatelessWidget {
                       }
                       provider.updateCollectionFrequencies(type.type, newFrequencies);
                     },
-                    enabled: !(isWeeklySelected && frequency != CollectionFrequency.weekly),
+                    enabled:
+                    !(isWeeklySelected && frequency != CollectionFrequency.weekly),
                   );
                 }),
                 CheckboxListTile(
@@ -140,7 +163,8 @@ class ReminderSettingsScreen extends StatelessWidget {
                       provider.updateCollectionRule(type.type, CollectionRule.empty());
                     } else {
                       if (isRuleEmpty) {
-                        provider.updateCollectionRule(type.type, CollectionRule(frequencies: {CollectionFrequency.weekly}, weekdays: {Weekday.monday}));
+                        provider.updateCollectionRule(type.type,
+                            CollectionRule(frequencies: {CollectionFrequency.weekly}, weekdays: {Weekday.monday}));
                       }
                     }
                   },
@@ -149,6 +173,7 @@ class ReminderSettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
+            // 曜日設定
             ExpansionTile(
               title: Text('曜日: ${provider.getWeekdayNames(currentRule.weekdays)}'),
               children: [
@@ -172,6 +197,7 @@ class ReminderSettingsScreen extends StatelessWidget {
             ),
             const SizedBox(height: 10),
 
+            // 収集時間設定
             ListTile(
               title: const Text('収集時間'),
               subtitle: Text(currentRule.timeOfDay ?? '未設定'),
@@ -200,7 +226,8 @@ class ReminderSettingsScreen extends StatelessWidget {
                   },
                 );
                 if (pickedTime != null) {
-                  final String formattedTime = '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}';
+                  final String formattedTime =
+                      '${pickedTime.hour.toString().padLeft(2, '0')}:${pickedTime.minute.toString().padLeft(2, '0')}';
                   provider.updateCollectionTime(type.type, formattedTime);
                 }
               },
@@ -231,7 +258,8 @@ class ReminderSettingsScreen extends StatelessWidget {
               onPressed: () {
                 final String newName = nameController.text.trim();
                 if (newName.isNotEmpty) {
-                  final provider = Provider.of<GarbageCollectionSettings>(context, listen: false);
+                  final provider =
+                  Provider.of<GarbageCollectionSettings>(context, listen: false);
                   final newType = GarbageType(
                     type: newName.toLowerCase().replaceAll(' ', '_'),
                     name: newName,

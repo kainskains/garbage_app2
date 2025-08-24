@@ -1,9 +1,5 @@
 import 'package:flutter/material.dart';
 
-// ✅ CollectionFrequencyとWeekdayのenumをここに集約します
-enum CollectionFrequency { weekly, firstWeek, secondWeek, thirdWeek, fourthWeek, fifthWeek, none }
-enum Weekday { none, sunday, monday, tuesday, wednesday, thursday, friday, saturday }
-
 class GarbageType {
   final String type;
   final String name;
