@@ -81,13 +81,8 @@ class GarbageCollectionSettings with ChangeNotifier {
       final List<dynamic> decodedList = jsonDecode(garbageTypesJsonString);
       _garbageTypes = decodedList.map((json) => GarbageType.fromJson(json as Map<String, dynamic>)).toList();
     } else {
-      _garbageTypes = [
-        GarbageType(type: 'burnable', name: '燃えるごみ', icon: Icons.local_fire_department, color: 'FFCDD2'),
-        GarbageType(type: 'non_burnable', name: '燃えないごみ', icon: Icons.delete_forever, color: 'BBDEFB'),
-        GarbageType(type: 'recyclable', name: '資源ごみ', icon: Icons.recycling, color: 'C8E6C9'),
-        GarbageType(type: 'plastic', name: 'プラスチック', icon: Icons.grass, color: 'FFF9C4'),
-        GarbageType(type: 'oversized', name: '粗大ごみ', icon: Icons.work, color: 'E1BEE7'),
-      ];
+      // ユーザーが手動でゴミタイプを追加できるように、この部分を空のままにする
+      _garbageTypes = [];
     }
 
     final settingsJsonString = prefs.getString('garbage_collection_settings');

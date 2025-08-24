@@ -16,7 +16,16 @@ class ReminderSettingsScreen extends StatelessWidget {
       body: Consumer<GarbageCollectionSettings>(
         builder: (context, provider, child) {
           if (provider.garbageTypes.isEmpty) {
-            return const Center(child: CircularProgressIndicator());
+            return const Center(
+              child: Padding(
+                padding: EdgeInsets.all(20.0),
+                child: Text(
+                  'まだゴミの種類が追加されていません。\n右下のボタンから新しいゴミを追加してください。',
+                  textAlign: TextAlign.center,
+                  style: TextStyle(fontSize: 16, color: Colors.grey),
+                ),
+              ),
+            );
           }
 
           return ListView.builder(

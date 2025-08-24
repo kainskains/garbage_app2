@@ -5,10 +5,30 @@
       {
         "prefecture": "北海道",
         "cities": [
+          { "name": "別海町", "gomisaku_id": "0257" },
+          { "name": "深川市", "gomisaku_id": "0266" },
+          { "name": "斜里町", "gomisaku_id": "0269" },
+          { "name": "上富良野町", "gomisaku_id": "0271" },
+          { "name": "池田町", "gomisaku_id": "0273" },
+          { "name": "富良野市", "gomisaku_id": "0036" },
+          { "name": "恵庭市", "gomisaku_id": "0047" },
+          { "name": "留萌南部衛生組合", "gomisaku_id": "0318" },
+          { "name": "網走市", "gomisaku_id": "0064" },
+          { "name": "東神楽町", "gomisaku_id": "0324" },
+          { "name": "江別市", "gomisaku_id": "0073" },
+          { "name": "西天北五町衛生施設組合", "gomisaku_id": "0336" },
+          { "name": "黒松内町", "gomisaku_id": "0337" },
+          { "name": "美幌町", "gomisaku_id": "0095" },
+          { "name": "北見市（北見自治区）", "gomisaku_id": "0352" },
+          { "name": "北見市（端野自治区）", "gomisaku_id": "0353" },
+          { "name": "北見市（常呂自治区）", "gomisaku_id": "0354" },
+          { "name": "北見市（留辺蘂自治区）", "gomisaku_id": "0355" },
+          { "name": "置戸町", "gomisaku_id": "0144" },
+          { "name": "ニセコ町", "gomisaku_id": "0171" },
           { "name": "札幌市", "gomisaku_id": "0186" },
-          { "name": "函館市", "gomisaku_id": null },
-          { "name": "旭川市", "gomisaku_id": null },
-          { "name": "釧路市", "gomisaku_id": null }
+          { "name": "大空町", "gomisaku_id": "0195" },
+          { "name": "士別市", "gomisaku_id": "0212" },
+          { "name": "音更町", "gomisaku_id": "0220" }
         ]
       }
     ]
@@ -17,34 +37,37 @@
     "region": "東北",
     "prefectures": [
       {
-        "prefecture": "青森県",
-        "cities": []
-      },
-      {
         "prefecture": "岩手県",
-        "cities": []
+        "cities": [
+          { "name": "金ケ崎町", "gomisaku_id": "0062" },
+          { "name": "久慈市", "gomisaku_id": "0072" },
+          { "name": "花巻市", "gomisaku_id": "0143" },
+          { "name": "田野畑村", "gomisaku_id": "0146" },
+          { "name": "一関地区広域行政組合", "gomisaku_id": "0161" },
+          { "name": "奥州金ケ崎行政事務組合", "gomisaku_id": "0235" }
+        ]
       },
       {
         "prefecture": "宮城県",
         "cities": [
-          { "name": "仙台市", "gomisaku_id": "0257" },
-          { "name": "石巻市", "gomisaku_id": null },
-          { "name": "大崎市", "gomisaku_id": null },
-          { "name": "登米市", "gomisaku_id": null }
+          { "name": "気仙沼市", "gomisaku_id": "0157" },
+          { "name": "仙台市", "gomisaku_id": "0199" }
         ]
       },
       {
         "prefecture": "秋田県",
-        "cities": []
-      },
-      {
-        "prefecture": "山形県",
-        "cities": []
+        "cities": [
+          { "name": "羽後町", "gomisaku_id": "0077" },
+          { "name": "北秋田市", "gomisaku_id": "0340" },
+          { "name": "男鹿市", "gomisaku_id": "0214" }
+        ]
       },
       {
         "prefecture": "福島県",
         "cities": [
-          { "name": "郡山市", "gomisaku_id": "0245" }
+          { "name": "郡山市", "gomisaku_id": "0335" },
+          { "name": "須賀川市", "gomisaku_id": "0085" },
+          { "name": "柳津町", "gomisaku_id": "0236" }
         ]
       }
     ]
@@ -54,47 +77,110 @@
     "prefectures": [
       {
         "prefecture": "茨城県",
-        "cities": []
+        "cities": [
+          { "name": "下妻市", "gomisaku_id": "0014" },
+          { "name": "土浦市", "gomisaku_id": "0034" },
+          { "name": "筑西市", "gomisaku_id": "0160" },
+          { "name": "鹿嶋市", "gomisaku_id": "0172" }
+        ]
       },
       {
         "prefecture": "栃木県",
         "cities": [
-          { "name": "宇都宮市", "gomisaku_id": "0209" }
+          { "name": "茂木町", "gomisaku_id": "0328" },
+          { "name": "鹿沼市", "gomisaku_id": "0097" },
+          { "name": "那須町", "gomisaku_id": "0233" },
+          { "name": "宇都宮市", "gomisaku_id": "0253" }
         ]
-      },
-      {
-        "prefecture": "群馬県",
-        "cities": []
       },
       {
         "prefecture": "埼玉県",
         "cities": [
-          { "name": "さいたま市", "gomisaku_id": "0254" }
+          { "name": "加須市", "gomisaku_id": "0007" },
+          { "name": "蓮田白岡衛生組合", "gomisaku_id": "0013" },
+          { "name": "熊谷市", "gomisaku_id": "0028" },
+          { "name": "草加市", "gomisaku_id": "0029" },
+          { "name": "宮代町", "gomisaku_id": "0325" },
+          { "name": "久喜市（久喜地区）", "gomisaku_id": "0326" },
+          { "name": "久喜市（菖蒲地区）", "gomisaku_id": "0327" },
+          { "name": "久喜市（栗橋地区）", "gomisaku_id": "0329" },
+          { "name": "久喜市（鷲宮地区）", "gomisaku_id": "0330" },
+          { "name": "鴻巣市", "gomisaku_id": "0096" },
+          { "name": "ふじみ野市", "gomisaku_id": "0102" },
+          { "name": "所沢市", "gomisaku_id": "0361" },
+          { "name": "深谷市", "gomisaku_id": "0135" },
+          { "name": "狭山市", "gomisaku_id": "0213" },
+          { "name": "川口市", "gomisaku_id": "0229" },
+          { "name": "本庄市", "gomisaku_id": "0239" },
+          { "name": "美里町", "gomisaku_id": "0240" },
+          { "name": "上里町", "gomisaku_id": "0241" },
+          { "name": "神川町", "gomisaku_id": "0242" },
+          { "name": "坂戸市", "gomisaku_id": "0245" },
+          { "name": "羽生市", "gomisaku_id": "0246" }
         ]
       },
       {
         "prefecture": "千葉県",
         "cities": [
-          { "name": "千葉市", "gomisaku_id": "0259" }
+          { "name": "浦安市", "gomisaku_id": "0012" },
+          { "name": "鎌ケ谷市", "gomisaku_id": "0018" },
+          { "name": "市川市", "gomisaku_id": "0033" },
+          { "name": "山武郡市環境衛生組合", "gomisaku_id": "0321" },
+          { "name": "一宮町", "gomisaku_id": "0089" },
+          { "name": "香取広域市町村圏事務組合", "gomisaku_id": "0092" }
         ]
       },
       {
         "prefecture": "東京都",
         "cities": [
+          { "name": "足立区", "gomisaku_id": "0258" },
           { "name": "新宿区", "gomisaku_id": "0263" },
+          { "name": "品川区", "gomisaku_id": "0264" },
+          { "name": "清瀬市", "gomisaku_id": "0015" },
+          { "name": "西東京市", "gomisaku_id": "0017" },
+          { "name": "日野市", "gomisaku_id": "0020" },
+          { "name": "稲城市", "gomisaku_id": "0276" },
+          { "name": "目黒区", "gomisaku_id": "0277" },
+          { "name": "小金井市", "gomisaku_id": "0022" },
+          { "name": "豊島区", "gomisaku_id": "0278" },
+          { "name": "国分寺市", "gomisaku_id": "0023" },
+          { "name": "墨田区", "gomisaku_id": "0279" },
+          { "name": "文京区", "gomisaku_id": "0280" },
+          { "name": "台東区", "gomisaku_id": "0282" },
+          { "name": "東村山市", "gomisaku_id": "0027" },
+          { "name": "中央区", "gomisaku_id": "0283" },
+          { "name": "調布市", "gomisaku_id": "0030" },
+          { "name": "昭島市", "gomisaku_id": "0049" },
+          { "name": "大田区", "gomisaku_id": "0056" },
+          { "name": "東久留米市", "gomisaku_id": "0069" },
+          { "name": "立川市", "gomisaku_id": "0084" },
+          { "name": "狛江市", "gomisaku_id": "0086" },
+          { "name": "小平市", "gomisaku_id": "0101" },
+          { "name": "港区", "gomisaku_id": "0166" },
+          { "name": "練馬区", "gomisaku_id": "0170" },
+          { "name": "江戸川区", "gomisaku_id": "0204" },
           { "name": "杉並区", "gomisaku_id": "0207" },
-          { "name": "世田谷区", "gomisaku_id": null },
-          { "name": "港区", "gomisaku_id": null },
-          { "name": "渋谷区", "gomisaku_id": null }
+          { "name": "世田谷区", "gomisaku_id": "0210" },
+          { "name": "八王子市", "gomisaku_id": "0230" }
         ]
       },
       {
         "prefecture": "神奈川県",
         "cities": [
+          { "name": "小田原市", "gomisaku_id": "0021" },
+          { "name": "寒川町", "gomisaku_id": "0035" },
+          { "name": "大井町", "gomisaku_id": "0037" },
+          { "name": "松田町", "gomisaku_id": "0041" },
+          { "name": "海老名市", "gomisaku_id": "0045" },
+          { "name": "厚木市", "gomisaku_id": "0051" },
+          { "name": "中井町", "gomisaku_id": "0066" },
+          { "name": "開成町", "gomisaku_id": "0334" },
+          { "name": "秦野市", "gomisaku_id": "0145" },
+          { "name": "茅ヶ崎市", "gomisaku_id": "0147" },
           { "name": "横浜市", "gomisaku_id": "0183" },
-          { "name": "川崎市", "gomisaku_id": null },
-          { "name": "相模原市", "gomisaku_id": "0219" },
-          { "name": "藤沢市", "gomisaku_id": null }
+          { "name": "川崎市", "gomisaku_id": "0196" },
+          { "name": "相模原市", "gomisaku_id": "0206" },
+          { "name": "南足柄市", "gomisaku_id": "0237" }
         ]
       }
     ]
@@ -105,48 +191,71 @@
       {
         "prefecture": "新潟県",
         "cities": [
-          { "name": "新潟市", "gomisaku_id": "0251" }
+          { "name": "南魚沼市", "gomisaku_id": "0038" },
+          { "name": "南魚沼市（大和地域）", "gomisaku_id": "0053" },
+          { "name": "糸魚川市", "gomisaku_id": "0098" },
+          { "name": "上越市", "gomisaku_id": "0152" },
+          { "name": "新潟市", "gomisaku_id": "0203" },
+          { "name": "小千谷市", "gomisaku_id": "0247" },
+          { "name": "長岡市", "gomisaku_id": "0249" }
         ]
       },
       {
         "prefecture": "富山県",
-        "cities": []
+        "cities": [
+          { "name": "富山市", "gomisaku_id": "0298" }
+        ]
       },
       {
         "prefecture": "石川県",
-        "cities": []
-      },
-      {
-        "prefecture": "福井県",
-        "cities": []
+        "cities": [
+          { "name": "金沢市", "gomisaku_id": "0268" },
+          { "name": "小松市", "gomisaku_id": "0071" }
+        ]
       },
       {
         "prefecture": "山梨県",
-        "cities": []
+        "cities": [
+          { "name": "甲州市", "gomisaku_id": "0262" },
+          { "name": "甲府市", "gomisaku_id": "0061" },
+          { "name": "甲斐市（竜王地区）", "gomisaku_id": "0063" },
+          { "name": "韮崎市", "gomisaku_id": "0319" },
+          { "name": "甲斐市（敷島地区・双葉地区）", "gomisaku_id": "0065" }
+        ]
       },
       {
         "prefecture": "長野県",
         "cities": [
-          { "name": "長野市", "gomisaku_id": "0265" }
+          { "name": "小諸市", "gomisaku_id": "0080" },
+          { "name": "塩尻市", "gomisaku_id": "0141" }
         ]
       },
       {
         "prefecture": "岐阜県",
-        "cities": []
+        "cities": [
+          { "name": "川辺町", "gomisaku_id": "0025" },
+          { "name": "坂祝町", "gomisaku_id": "0046" },
+          { "name": "大垣市", "gomisaku_id": "0100" },
+          { "name": "富加町", "gomisaku_id": "0234" }
+        ]
       },
       {
         "prefecture": "静岡県",
         "cities": [
-          { "name": "静岡市", "gomisaku_id": "0223" }
+          { "name": "焼津市", "gomisaku_id": "0091" },
+          { "name": "浜松市", "gomisaku_id": "0205" },
+          { "name": "静岡市（葵・駿河区）", "gomisaku_id": "0208" },
+          { "name": "静岡市（清水区）", "gomisaku_id": "0217" }
         ]
       },
       {
         "prefecture": "愛知県",
         "cities": [
-          { "name": "名古屋市", "gomisaku_id": "0185" },
-          { "name": "豊田市", "gomisaku_id": null },
-          { "name": "一宮市", "gomisaku_id": null },
-          { "name": "岡崎市", "gomisaku_id": null }
+          { "name": "碧南市", "gomisaku_id": "0040" },
+          { "name": "日進市", "gomisaku_id": "0074" },
+          { "name": "春日井市", "gomisaku_id": "0356" },
+          { "name": "弥富市", "gomisaku_id": "0142" },
+          { "name": "名古屋市", "gomisaku_id": "0185" }
         ]
       }
     ]
@@ -156,44 +265,75 @@
     "prefectures": [
       {
         "prefecture": "三重県",
-        "cities": []
+        "cities": [
+          { "name": "鈴鹿市", "gomisaku_id": "0026" },
+          { "name": "亀山市", "gomisaku_id": "0054" },
+          { "name": "桑名市", "gomisaku_id": "0070" },
+          { "name": "熊野市（旧熊野市）", "gomisaku_id": "0364" },
+          { "name": "熊野市（旧紀和町）", "gomisaku_id": "0365" },
+          { "name": "紀宝町", "gomisaku_id": "0254" }
+        ]
       },
       {
         "prefecture": "滋賀県",
         "cities": [
-          { "name": "大津市", "gomisaku_id": "0217" }
+          { "name": "近江八幡市", "gomisaku_id": "0003" },
+          { "name": "大津市", "gomisaku_id": "0006" },
+          { "name": "高島市", "gomisaku_id": "0058" },
+          { "name": "野洲市", "gomisaku_id": "0320" },
+          { "name": "中部清掃組合", "gomisaku_id": "0323" },
+          { "name": "多賀町", "gomisaku_id": "0076" },
+          { "name": "湖北広域行政事務センター", "gomisaku_id": "0082" },
+          { "name": "守山市", "gomisaku_id": "0218" }
         ]
       },
       {
         "prefecture": "京都府",
         "cities": [
-          { "name": "京都市", "gomisaku_id": "0218" }
+          { "name": "長岡京市", "gomisaku_id": "0004" },
+          { "name": "宇治市", "gomisaku_id": "0005" },
+          { "name": "向日市", "gomisaku_id": "0042" },
+          { "name": "京丹後市", "gomisaku_id": "0052" },
+          { "name": "精華町", "gomisaku_id": "0055" },
+          { "name": "亀岡市", "gomisaku_id": "0079" },
+          { "name": "久御山町", "gomisaku_id": "0156" },
+          { "name": "木津川市", "gomisaku_id": "0167" },
+          { "name": "八幡市", "gomisaku_id": "0250" }
         ]
       },
       {
         "prefecture": "大阪府",
         "cities": [
+          { "name": "茨木市", "gomisaku_id": "0024" },
+          { "name": "枚方市", "gomisaku_id": "0296" },
+          { "name": "泉北環境整備施設組合", "gomisaku_id": "0043" },
+          { "name": "島本町", "gomisaku_id": "0083" },
+          { "name": "泉大津市", "gomisaku_id": "0099" },
+          { "name": "吹田市", "gomisaku_id": "0358" },
+          { "name": "八尾市", "gomisaku_id": "0140" },
           { "name": "大阪市", "gomisaku_id": "0184" },
-          { "name": "堺市", "gomisaku_id": null },
-          { "name": "東大阪市", "gomisaku_id": null },
-          { "name": "豊中市", "gomisaku_id": null }
+          { "name": "堺市", "gomisaku_id": "0201" },
+          { "name": "東大阪市", "gomisaku_id": "0231" }
         ]
       },
       {
         "prefecture": "兵庫県",
         "cities": [
-          { "name": "神戸市", "gomisaku_id": "0222" }
+          { "name": "西宮市", "gomisaku_id": "0260" },
+          { "name": "豊岡市", "gomisaku_id": "0261" },
+          { "name": "高砂市", "gomisaku_id": "0050" },
+          { "name": "赤穂市", "gomisaku_id": "0075" },
+          { "name": "明石市", "gomisaku_id": "0348" },
+          { "name": "神戸市", "gomisaku_id": "0188" },
+          { "name": "尼崎市", "gomisaku_id": "0255" }
         ]
       },
       {
         "prefecture": "奈良県",
         "cities": [
-          { "name": "奈良市", "gomisaku_id": "0260" }
+          { "name": "奈良市", "gomisaku_id": "0274" },
+          { "name": "橿原市", "gomisaku_id": "0128" }
         ]
-      },
-      {
-        "prefecture": "和歌山県",
-        "cities": []
       }
     ]
   },
@@ -201,26 +341,37 @@
     "region": "中国",
     "prefectures": [
       {
-        "prefecture": "鳥取県",
-        "cities": []
-      },
-      {
         "prefecture": "島根県",
-        "cities": []
+        "cities": [
+          { "name": "奥出雲町", "gomisaku_id": "0081" },
+          { "name": "浜田市", "gomisaku_id": "0362" },
+          { "name": "川本町", "gomisaku_id": "0129" },
+          { "name": "大田市", "gomisaku_id": "0179" }
+        ]
       },
       {
         "prefecture": "岡山県",
-        "cities": []
+        "cities": [
+          { "name": "倉敷市", "gomisaku_id": "0267" },
+          { "name": "玉野市", "gomisaku_id": "0158" }
+        ]
       },
       {
         "prefecture": "広島県",
         "cities": [
-          { "name": "広島市", "gomisaku_id": "0224" }
+          { "name": "世羅町", "gomisaku_id": "0272" },
+          { "name": "廿日市市", "gomisaku_id": "0059" },
+          { "name": "府中町", "gomisaku_id": "0068" },
+          { "name": "広島市", "gomisaku_id": "0198" },
+          { "name": "庄原市", "gomisaku_id": "0251" }
         ]
       },
       {
         "prefecture": "山口県",
-        "cities": []
+        "cities": [
+          { "name": "下松市", "gomisaku_id": "0331" },
+          { "name": "下関市", "gomisaku_id": "0351" }
+        ]
       }
     ]
   },
@@ -229,21 +380,27 @@
     "prefectures": [
       {
         "prefecture": "徳島県",
-        "cities": []
+        "cities": [
+          { "name": "阿南市", "gomisaku_id": "0367" }
+        ]
       },
       {
         "prefecture": "香川県",
         "cities": [
-          { "name": "高松市", "gomisaku_id": "0248" }
+          { "name": "高松市", "gomisaku_id": "0284" }
         ]
       },
       {
         "prefecture": "愛媛県",
-        "cities": []
+        "cities": [
+          { "name": "松山市", "gomisaku_id": "0252" }
+        ]
       },
       {
         "prefecture": "高知県",
-        "cities": []
+        "cities": [
+          { "name": "高知市", "gomisaku_id": "0359" }
+        ]
       }
     ]
   },
@@ -253,41 +410,31 @@
       {
         "prefecture": "福岡県",
         "cities": [
+          { "name": "久留米市", "gomisaku_id": "0349" },
           { "name": "福岡市", "gomisaku_id": "0187" },
-          { "name": "北九州市", "gomisaku_id": null },
-          { "name": "久留米市", "gomisaku_id": null },
-          { "name": "大牟田市", "gomisaku_id": null }
+          { "name": "北九州市", "gomisaku_id": "0200" }
         ]
       },
       {
-        "prefecture": "佐賀県",
-        "cities": []
-      },
-      {
         "prefecture": "長崎県",
-        "cities": []
+        "cities": [
+          { "name": "長崎市", "gomisaku_id": "0265" }
+        ]
       },
       {
         "prefecture": "熊本県",
         "cities": [
-          { "name": "熊本市", "gomisaku_id": "0258" }
+          { "name": "宇城市", "gomisaku_id": "0094" },
+          { "name": "熊本市", "gomisaku_id": "0103" },
+          { "name": "宇土市", "gomisaku_id": "0127" },
+          { "name": "美里町", "gomisaku_id": "0228" }
         ]
       },
       {
-        "prefecture": "大分県",
-        "cities": []
-      },
-      {
         "prefecture": "宮崎県",
-        "cities": []
-      },
-      {
-        "prefecture": "鹿児島県",
-        "cities": []
-      },
-      {
-        "prefecture": "沖縄県",
-        "cities": []
+        "cities": [
+          { "name": "日向市", "gomisaku_id": "0019" }
+        ]
       }
     ]
   }
